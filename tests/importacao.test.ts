@@ -41,3 +41,33 @@ describe("importação de planilha", () => {
     expect(r.linhas[0]).toMatchObject({ time: "Eficientes", frente: "Folha de Professores", fim: "2026-08-28" });
   });
 });
+
+describe("planilha da Retaguarda / Contas a Pagar", () => {
+  const csv = [
+    ",,,,,,,,,,,",
+    ",,,,,,,,,,,",
+    ",,,Informações da Sprint,,,,,,Avaliação do Squad,,",
+    'Squad,Sprint,Início,Fim,Total de itens extras,Qtd Itens Concluídos,Itens concluídos sem suporte,Qtd Pontos Concluídos,Acréscimo (%),Eficiência Média (%),"Produtividade\nColetiva","Produtividade\nIndividual","Motivação\nColetiva","Motivação\nIndividual",Motivação',
+    'X-Retaguarda,S107 25.Q4.3,04/11/2025,18/11/2025,5,58,40,"21,50","10,64%","82,69%","4,8","4,5","4,8","4,5","4,7"',
+    'CF,S58 25.Q4.3,04/11/2025,18/11/2025,1,8,6,"7,50","5,56%","78,95%","4,8","4,6","4,6","4,6","4,6"',
+    ",,,,,,,,,,,,,,",
+  ].join("\n");
+  const d = lerCsv(csv);
+  it("detecta o cabeçalho na linha 4 e mapeia as colunas certas", async () => {
+    const { detectarCabecalho } = await import("../src/lib/importacao");
+    const lt = detectarCabecalho(d);
+    expect(lt).toBe(4);
+    const r = montarLinhas(d, lt, sugerirMapa(d[lt - 1]), { tipo: "sprint", duracaoDias: 14 });
+    expect(r.avisos).toEqual([]);
+    expect(r.linhas[0]).toMatchObject({ time: "Retaguarda", frente: "X-Retaguarda", itens_entregues: 40, pts_sdd: 21.5 });
+    expect(r.linhas[0].entrega).toBeCloseTo(0.8269);
+    expect(r.linhas[0].extras).toBeCloseTo(0.1064);
+    // (4,8 + 4,5) / 2 / 5 = 93%
+    expect(r.linhas[0].produtividade).toBeCloseTo(0.93);
+    expect(r.linhas[0].motivacao).toBeCloseTo(0.93);
+    expect(r.linhas[1]).toMatchObject({ time: "Contas a Pagar", frente: "" });
+    // CF: "sem suporte" = 8 − 15 = −7 na planilha → usa o total de concluídos
+    expect(montarLinhas(lerCsv(csv.replace(',8,6,', ',8,-7,')), 4, sugerirMapa(d[3]), { tipo: "sprint", duracaoDias: 14 }).linhas[1].itens_entregues).toBe(8);
+    expect(r.linhas[1].produtividade).toBeCloseTo(0.94);
+  });
+});

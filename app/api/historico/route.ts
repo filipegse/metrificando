@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import type { LinhaHistorico } from "@/lib/importacao";
 import { sqlAuditar, usuarioDe, type Linha } from "@/lib/historico";
+import { VERSAO_MAPA } from "@/lib/importacao";
 
 const COLUNAS = ["entrega", "extras", "pts_sdd", "esforco_sdd", "pts_sem_sdd", "esforco_sem_sdd", "ganho_sdd",
   "itens_entregues", "cycle_p50", "cycle_p85", "produtividade", "motivacao"] as const;
@@ -37,7 +38,8 @@ export async function POST(req: Request) {
       fonte = excluded.fonte, ${sql.unsafe(COLUNAS.map((c) => `${c} = excluded.${c}`).join(", "))}, importado_em = now()`);
   for (const l of linhas) comandos.push(sqlAuditar(quem, "importacao", { time: l.time, frente: l.frente ?? "", nome: l.nome }, antesDe(l), { ...l, frente: l.frente ?? "", fonte } as Linha));
   // Guarda o mapeamento pelo título (não pela posição), para sugerir na próxima importação.
-  const porTitulo = Object.fromEntries(Object.entries(mapa).map(([campo, i]) => [campo, cabecalho[i]]));
+  // `_v`: versão das regras de reconhecimento; mapeamentos salvos com regras antigas são descartados.
+  const porTitulo = { _v: VERSAO_MAPA, ...Object.fromEntries(Object.entries(mapa).map(([campo, i]) => [campo, cabecalho[i]])) };
   comandos.push(sql`
     insert into import_mapeamentos (fonte, mapa, linha_titulo) values (${fonte}, ${JSON.stringify(porTitulo)}, ${linhaTitulo})
     on conflict (fonte) do update set mapa = excluded.mapa, linha_titulo = excluded.linha_titulo, atualizado_em = now()`);

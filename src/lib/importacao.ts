@@ -3,26 +3,42 @@
 
 export type Campo =
   | "time" | "nome" | "inicio" | "fim" | "entrega" | "extras" | "pts_sdd" | "esforco_sdd" | "pts_sem_sdd"
-  | "esforco_sem_sdd" | "ganho_sdd" | "itens_entregues" | "cycle_p50" | "cycle_p85" | "produtividade" | "motivacao";
+  | "esforco_sem_sdd" | "ganho_sdd" | "itens_entregues" | "cycle_p50" | "cycle_p85" | "produtividade" | "motivacao"
+  | "prod_coletiva" | "prod_individual" | "mot_coletiva" | "mot_individual" | "itens_total";
 
-export const CAMPOS: { campo: Campo; rotulo: string; tipo: "texto" | "data" | "numero" | "fracao"; apelidos: string[] }[] = [
+/** Campos auxiliares: não são gravados, só usados para calcular outros campos. */
+export const AUXILIARES: Campo[] = ["prod_coletiva", "prod_individual", "mot_coletiva", "mot_individual", "itens_total"];
+
+// `exatos`: apelidos que só valem por igualdade (evita casar "extras" com "Total de itens extras").
+// `escala`: notas 1–5 do health check, convertidas em fração ÷ 5 (como no TeamRetro).
+export const CAMPOS: { campo: Campo; rotulo: string; tipo: "texto" | "data" | "numero" | "fracao" | "escala"; apelidos: string[]; exatos?: string[] }[] = [
   { campo: "time", rotulo: "Time / frente", tipo: "texto", apelidos: ["time", "squad", "time ou frente", "frente"] },
   { campo: "nome", rotulo: "Sprint / ciclo", tipo: "texto", apelidos: ["sprint", "nome da sprint", "ciclo", "nome do ciclo"] },
   { campo: "inicio", rotulo: "Início", tipo: "data", apelidos: ["data inicio", "inicio", "data de inicio", "inicio da sprint", "inicio do ciclo"] },
   { campo: "fim", rotulo: "Fim", tipo: "data", apelidos: ["data fim", "fim", "data de fim", "fim da sprint", "fim do ciclo", "data final"] },
-  { campo: "entrega", rotulo: "Entrega %", tipo: "fracao", apelidos: ["entrega", "% entrega", "entrega %", "proporcao de entrega"] },
-  { campo: "extras", rotulo: "Extras %", tipo: "fracao", apelidos: ["extras", "% extras", "% extra", "extras %"] },
-  { campo: "pts_sdd", rotulo: "Pontos concluídos COM SDD (CC)", tipo: "numero", apelidos: ["qtd pontos concluidos com sdd", "pontos concluidos com sdd"] },
+  { campo: "entrega", rotulo: "Entrega %", tipo: "fracao", apelidos: ["% entrega", "entrega %", "proporcao de entrega"], exatos: ["entrega", "eficiencia media %", "eficiencia media"] },
+  { campo: "extras", rotulo: "Extras %", tipo: "fracao", apelidos: ["% extras", "% extra", "extras %"], exatos: ["extras", "acrescimo %", "acrescimo"] },
+  { campo: "pts_sdd", rotulo: "Pontos concluídos COM SDD (CC)", tipo: "numero", apelidos: ["qtd pontos concluidos com sdd", "pontos concluidos com sdd"], exatos: ["qtd pontos concluidos"] },
   { campo: "esforco_sdd", rotulo: "Pontos de esforço COM SDD (CD)", tipo: "numero", apelidos: ["qtd pontos de esforco com sdd", "pontos de esforco com sdd"] },
   { campo: "pts_sem_sdd", rotulo: "Pontos concluídos SEM SDD (CJ)", tipo: "numero", apelidos: ["qtd pontos concluidos sem sdd", "pontos concluidos sem sdd"] },
   { campo: "esforco_sem_sdd", rotulo: "Pontos de esforço SEM SDD (CK)", tipo: "numero", apelidos: ["qtd pontos de esforco sem sdd", "pontos de esforco sem sdd"] },
   { campo: "ganho_sdd", rotulo: "Ganho SDD % (CL)", tipo: "fracao", apelidos: ["ganho sdd", "ganho de eficiencia sdd", "% ganho sdd", "ganho sdd %"] },
-  { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"] },
+  // Primeiro apelido que existir vence: "sem suporte" tem prioridade (suporte não conta como item entregue).
+  { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["itens concluidos sem suporte", "qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"] },
+  // Reserva quando "sem suporte" vem negativo (CF: suporte fora da sprint, a fórmula da planilha desconta mesmo assim).
+  { campo: "itens_total", rotulo: "Itens concluídos (total, reserva)", tipo: "numero", apelidos: [], exatos: ["qtd itens concluidos"] },
   { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50"] },
   { campo: "cycle_p85", rotulo: "Tempo de ciclo P85", tipo: "numero", apelidos: ["tempo do ciclo p85", "p85 tempo do ciclo", "cycle time p85", "tempo de ciclo p85"] },
-  { campo: "produtividade", rotulo: "Produtividade %", tipo: "fracao", apelidos: ["produtividade", "produtividade geral", "% produtividade"] },
-  { campo: "motivacao", rotulo: "Motivação %", tipo: "fracao", apelidos: ["motivacao", "motivacao geral", "% motivacao"] },
+  { campo: "produtividade", rotulo: "Produtividade (geral)", tipo: "escala", apelidos: ["produtividade geral", "% produtividade"], exatos: ["produtividade"] },
+  { campo: "motivacao", rotulo: "Motivação (geral)", tipo: "escala", apelidos: ["motivacao geral", "% motivacao"], exatos: ["motivacao"] },
+  { campo: "prod_coletiva", rotulo: "Produtividade coletiva (1–5)", tipo: "escala", apelidos: ["produtividade coletiva"] },
+  { campo: "prod_individual", rotulo: "Produtividade individual (1–5)", tipo: "escala", apelidos: ["produtividade individual"] },
+  { campo: "mot_coletiva", rotulo: "Motivação coletiva (1–5)", tipo: "escala", apelidos: ["motivacao coletiva"] },
+  { campo: "mot_individual", rotulo: "Motivação individual (1–5)", tipo: "escala", apelidos: ["motivacao individual"] },
 ];
+
+/** Sobe quando as regras de reconhecimento de colunas mudam (invalida mapeamentos salvos antes). */
+export const VERSAO_MAPA = 2;
 
 export const normalizar = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim();
@@ -55,9 +71,14 @@ export function sugerirMapa(cabecalho: string[]): Partial<Record<Campo, number>>
   const mapa: Partial<Record<Campo, number>> = {};
   const usados = new Set<number>();
   for (const passo of ["igual", "contem"] as const) {
-    for (const { campo, apelidos } of CAMPOS) {
+    for (const { campo, apelidos, exatos = [] } of CAMPOS) {
       if (mapa[campo] !== undefined) continue;
-      const i = titulos.findIndex((t, k) => !usados.has(k) && t && apelidos.some((a) => (passo === "igual" ? t === a : t.includes(a))));
+      // Percorre os apelidos em ordem de prioridade; para cada um, procura a primeira coluna livre que casa.
+      let i = -1;
+      for (const a of passo === "igual" ? [...apelidos, ...exatos] : apelidos) {
+        i = titulos.findIndex((t, k) => !usados.has(k) && !!t && (passo === "igual" ? t === a : t.includes(a)));
+        if (i >= 0) break;
+      }
       if (i >= 0) { mapa[campo] = i; usados.add(i); }
     }
   }
@@ -78,6 +99,26 @@ export function fracao(v: string | undefined): number | null {
   const n = numero(v);
   if (n == null) return null;
   return v!.includes("%") || Math.abs(n) > 1.5 ? n / 100 : n;
+}
+
+/** Nota de health check: "4,8" (escala 1–5) → 0.96; "96%" → 0.96; "0,96" → 0.96. */
+export function escala(v: string | undefined): number | null {
+  const n = numero(v);
+  if (n == null) return null;
+  if (v!.includes("%")) return n / 100;
+  if (n <= 1) return n;
+  if (n <= 5) return n / 5;
+  return n / 100;
+}
+
+/** Linha do cabeçalho: entre as primeiras, a que tem mais títulos reconhecidos (planilhas com 2–3 linhas de agrupamento). */
+export function detectarCabecalho(dados: string[][], max = 8): number {
+  let melhor = 1, pontos = -1;
+  dados.slice(0, max).forEach((l, i) => {
+    const n = Object.keys(sugerirMapa(l)).length;
+    if (n > pontos) { melhor = i + 1; pontos = n; }
+  });
+  return melhor;
 }
 
 /** "13/10/2026" ou "2026-10-13" → "2026-10-13". */
@@ -119,7 +160,7 @@ export function timeDe(valorTime: string | undefined, nome: string | undefined, 
 
 export type LinhaHistorico = {
   time: string; frente: string; nome: string; tipo: "sprint" | "semana"; inicio: string | null; fim: string;
-} & Partial<Record<Exclude<Campo, "time" | "nome" | "inicio" | "fim">, number | null>>;
+} & Partial<Record<Exclude<Campo, "time" | "nome" | "inicio" | "fim" | "prod_coletiva" | "prod_individual" | "mot_coletiva" | "mot_individual">, number | null>>;
 
 export type Resultado = { linhas: LinhaHistorico[]; avisos: { linha: number; motivo: string }[] };
 
@@ -133,6 +174,8 @@ export function montarLinhas(
     const n = linhaTitulo + k + 1;
     if (!l.some((x) => x.trim())) return;
     const nome = valor(l, "nome");
+    // Linha sem sprint e sem time é linha vazia de fórmula/separador: ignora em silêncio.
+    if (!nome && !valor(l, "time")) return;
     if (!nome) return avisos.push({ linha: n, motivo: "sem nome de sprint/ciclo" }) && undefined;
     const t = timeDe(valor(l, "time"), nome, opcoes.timePadrao);
     if (!t) return avisos.push({ linha: n, motivo: `time não reconhecido ("${valor(l, "time") ?? nome}")` }) && undefined;
@@ -142,10 +185,18 @@ export function montarLinhas(
     if (!fim && inicio) fim = new Date(Date.parse(inicio) + (opcoes.duracaoDias - 1) * 86400000).toISOString().slice(0, 10);
     if (!fim) return avisos.push({ linha: n, motivo: "sem data de fim/início" }) && undefined;
     const linha: LinhaHistorico = { time: t.time, frente: t.frente ?? "", nome, tipo: opcoes.tipo, inicio, fim };
+    const aux: Partial<Record<Campo, number | null>> = {};
     for (const { campo, tipo } of CAMPOS) {
-      if (tipo === "numero") linha[campo as "pts_sdd"] = numero(valor(l, campo));
-      if (tipo === "fracao") linha[campo as "entrega"] = fracao(valor(l, campo));
+      const v = tipo === "numero" ? numero(valor(l, campo)) : tipo === "fracao" ? fracao(valor(l, campo)) : tipo === "escala" ? escala(valor(l, campo)) : undefined;
+      if (v === undefined) continue;
+      if (AUXILIARES.includes(campo)) aux[campo] = v;
+      else linha[campo as "pts_sdd"] = v;
     }
+    // Como no TeamRetro: produtividade = média(coletiva, individual); motivação idem. Tem prioridade sobre a coluna "geral".
+    const media = (a?: number | null, b?: number | null) => (a != null && b != null ? (a + b) / 2 : a ?? b ?? null);
+    if (aux.prod_coletiva != null || aux.prod_individual != null) linha.produtividade = media(aux.prod_coletiva, aux.prod_individual);
+    if (aux.mot_coletiva != null || aux.mot_individual != null) linha.motivacao = media(aux.mot_coletiva, aux.mot_individual);
+    if (linha.itens_entregues != null && linha.itens_entregues < 0) linha.itens_entregues = aux.itens_total ?? null;
     linhas.push(linha);
   });
   return { linhas, avisos };
