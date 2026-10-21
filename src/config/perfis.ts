@@ -56,8 +56,11 @@ export type Perfil = {
   suporte: FonteSuporte[];
   /** Time no TeamRetro (health check Squad Feeling v2). */
   teamRetroId?: string;
-  /** Quando o time do TeamRetro é compartilhado: só os health checks cujo título casa com o padrão. */
-  teamRetroTitulo?: RegExp;
+  /**
+   * Quando o time do TeamRetro é compartilhado ou dividido em frentes: cada série de health check
+   * é reconhecida pelo título. Sem séries, todos os health checks do time valem para o time inteiro.
+   */
+  teamRetroSeries?: { titulo: RegExp; frente: string | null }[];
 };
 
 export const PERFIS: Perfil[] = [
@@ -92,14 +95,14 @@ export const PERFIS: Perfil[] = [
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroTitulo: /^(Retaguarda|Sprint)\s+\d+/i, projeto: "TRG", metodologia: "scrum", periodo: "sprint",
+    time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^(Retaguarda|Sprint)\s+\d+/i, frente: "Retaguarda" }, { titulo: /^X-Reta\b/i, frente: "X-Retaguarda" }], projeto: "TRG", metodologia: "scrum", periodo: "sprint",
     campoFrente: { id: "components", nome: "Components" },
     mapaDelivery: S.DELIVERY_TRG, tiposDelivery: ["História", "Tecnologia"],
     // Suporte entra na sprint, mas não soma pontos nem conta como item entregue.
     suporte: [{ projeto: "TRG", porTipo: true, mapa: S.DELIVERY_TRG, statusResolucao: "Concluído", papel: "chamado", naSprint: true }],
   },
   {
-    time: "Contas a Pagar", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroTitulo: /^Fluig\s+\d+/i, projeto: "CF", metodologia: "scrum", periodo: "sprint",
+    time: "Contas a Pagar", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^Fluig\s+\d+/i, frente: null }], projeto: "CF", metodologia: "scrum", periodo: "sprint",
     campoFrente: null, mapaDelivery: S.DELIVERY_CF, tiposDelivery: ["História", "Correção", "Tecnologia"],
     // Suporte fica fora da sprint e tem workflow próprio.
     suporte: [{ projeto: "CF", porTipo: true, mapa: S.SUPORTE_CF, statusResolucao: "Resolvido", papel: "chamado", naSprint: false }],

@@ -48,12 +48,16 @@ describe("associação ao período", () => {
 
 describe("time compartilhado no TeamRetro", async () => {
   const { perfilPorProjeto } = await import("../src/config/perfis");
-  it("separa Retaguarda, Contas a Pagar e X-Retaguarda pelo título", () => {
-    const trg = perfilPorProjeto("TRG")!.teamRetroTitulo!, cf = perfilPorProjeto("CF")!.teamRetroTitulo!;
-    expect(trg.test("Retaguarda 109")).toBe(true);
-    expect(trg.test("Sprint 108 - 14/09 - 25/09")).toBe(true);
-    expect(trg.test("X-Reta | 131")).toBe(false);
-    expect(cf.test("Fluig 82")).toBe(true);
-    expect(cf.test("Retaguarda 109")).toBe(false);
+  const serie = (projeto: string, titulo: string) =>
+    perfilPorProjeto(projeto)!.teamRetroSeries!.find((s) => s.titulo.test(titulo));
+  it("TRG: frentes Retaguarda e X-Retaguarda pelo título", () => {
+    expect(serie("TRG", "Retaguarda 109")?.frente).toBe("Retaguarda");
+    expect(serie("TRG", "Sprint 108 - 14/09 - 25/09")?.frente).toBe("Retaguarda");
+    expect(serie("TRG", "X-Reta | 131")?.frente).toBe("X-Retaguarda");
+    expect(serie("TRG", "Fluig 82")).toBeUndefined();
+  });
+  it("Contas a Pagar: série Fluig", () => {
+    expect(serie("CF", "Fluig 82")).toBeDefined();
+    expect(serie("CF", "X-Reta | 131")).toBeUndefined();
   });
 });

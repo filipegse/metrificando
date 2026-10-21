@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { corEntrega, corExtras, corPontos, indicadores, type LinhaDelivery } from "../src/lib/indicadores";
+import { saudeDoPeriodo, corEntrega, corExtras, corPontos, indicadores, type LinhaDelivery } from "../src/lib/indicadores";
 
 const periodo = { periodo_id: "1", nome: "DSR 70", tipo: "sprint", inicio: "2026-10-01", fim: "2026-10-14" };
 const item = (sp: number, planejamento: string, entregue: boolean, cycle: number | null = 2): LinhaDelivery => ({
@@ -45,5 +45,16 @@ describe("semáforo", () => {
     expect(corExtras(0.25)).toBe("atencao");
     expect(corPontos(55, 50)).toBe("bom");
     expect(corPontos(42, 50)).toBe("atencao");
+  });
+});
+
+describe("saúde com frentes", () => {
+  it("pondera as frentes pelo número de respostas", () => {
+    const h = saudeDoPeriodo([
+      { periodo_id: "1", frente: "Retaguarda", produtividade: 0.9, motivacao: 0.8, respostas: 6 },
+      { periodo_id: "1", frente: "X-Retaguarda", produtividade: 0.7, motivacao: 1, respostas: 2 },
+    ])!;
+    expect(h.produtividade).toBeCloseTo(0.85);
+    expect(h.motivacao).toBeCloseTo(0.85);
   });
 });

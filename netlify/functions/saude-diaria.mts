@@ -19,16 +19,19 @@ export default async () => {
       select periodo_id, tipo, nome, inicio::text, fim::text from periodos
       where time = ${perfil.time} and fim >= ${new Date(de.getTime() - 14 * 24 * 60 * 60 * 1000)}`) as any[];
     const hcs = await listarHealthChecks(perfil.teamRetroId!, dia(de), dia(ate));
-    for (const hc of hcs.filter((h) => !perfil.teamRetroTitulo || perfil.teamRetroTitulo.test(h.title ?? ""))) {
+    for (const hc of hcs) {
+      const serie = perfil.teamRetroSeries?.find((x) => x.titulo.test(hc.title ?? ""));
+      if (perfil.teamRetroSeries && !serie) continue;
+      const frente = serie?.frente ?? "";
       const periodoId = periodoDoHealthCheck(hc.date, periodos, hc.title);
       if (!periodoId) continue;
       const s = saudeDe(hc);
       await sql`
-        insert into saude_time (time, periodo_id, health_check_id, data, prod_coletiva, prod_individual, mot_individual,
+        insert into saude_time (time, periodo_id, frente, health_check_id, data, prod_coletiva, prod_individual, mot_individual,
           mot_coletiva, produtividade, motivacao, respostas)
-        values (${perfil.time}, ${periodoId}, ${s.healthCheckId}, ${s.data}, ${s.prodColetiva}, ${s.prodIndividual},
+        values (${perfil.time}, ${periodoId}, ${frente}, ${s.healthCheckId}, ${s.data}, ${s.prodColetiva}, ${s.prodIndividual},
           ${s.motIndividual}, ${s.motColetiva}, ${s.produtividade}, ${s.motivacao}, ${s.respostas})
-        on conflict (time, periodo_id) do update set health_check_id = excluded.health_check_id, data = excluded.data,
+        on conflict (time, periodo_id, frente) do update set health_check_id = excluded.health_check_id, data = excluded.data,
           prod_coletiva = excluded.prod_coletiva, prod_individual = excluded.prod_individual,
           mot_individual = excluded.mot_individual, mot_coletiva = excluded.mot_coletiva,
           produtividade = excluded.produtividade, motivacao = excluded.motivacao,

@@ -6,7 +6,7 @@ export type LinhaDelivery = {
   planejamento: string | null; categoria_roadmap: string | null; entregue: boolean; cycle_time_dias: number | null;
 };
 export type LinhaSuporte = { periodo_id: string; nivel: string | null; papel: string; tempo_resolucao_dias: number };
-export type LinhaSaude = { periodo_id: string; produtividade: number | null; motivacao: number | null; respostas: number };
+export type LinhaSaude = { periodo_id: string; frente?: string; produtividade: number | null; motivacao: number | null; respostas: number };
 export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string };
 
 export type Indicadores = {
@@ -59,7 +59,7 @@ function agrupar(itens: LinhaDelivery[], chave: (i: LinhaDelivery) => string): R
 }
 
 export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte: LinhaSuporte[], saude: LinhaSaude[] = []): Indicadores {
-  const h = saude.find((x) => x.periodo_id === periodo.periodo_id);
+  const h = saudeDoPeriodo(saude.filter((x) => x.periodo_id === periodo.periodo_id));
   const d = delivery.filter((i) => i.periodo_id === periodo.periodo_id);
   const s = suporte.filter((i) => i.periodo_id === periodo.periodo_id);
   const entregues = d.filter((i) => i.entregue);
@@ -112,4 +112,15 @@ export function corPontos(v: number, mediana: number | null): Semaforo {
 export function corSaude(v: number | null): Semaforo {
   if (v == null) return "neutro";
   return v >= 0.9 - 1e-9 ? "bom" : v < 0.8 ? "atencao" : "neutro";
+}
+
+/** Junta os health checks das frentes de um período em um valor do time, ponderado pelo nº de respostas. */
+export function saudeDoPeriodo(linhas: LinhaSaude[]): { produtividade: number | null; motivacao: number | null } | undefined {
+  if (!linhas.length) return undefined;
+  const media = (campo: "produtividade" | "motivacao") => {
+    const validas = linhas.filter((l) => l[campo] != null && l.respostas > 0);
+    const peso = validas.reduce((s, l) => s + l.respostas, 0);
+    return peso ? validas.reduce((s, l) => s + l[campo]! * l.respostas, 0) / peso : null;
+  };
+  return { produtividade: media("produtividade"), motivacao: media("motivacao") };
 }

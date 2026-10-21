@@ -41,7 +41,7 @@ export async function carregarDeck(deck: string, projetos: string[]): Promise<Da
       select periodo_id, nivel, papel, tempo_resolucao_dias::float
       from itens_suporte where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSuporte[];
     const saude = (await sql`
-      select periodo_id, produtividade::float, motivacao::float, respostas
+      select periodo_id, frente, produtividade::float, motivacao::float, respostas
       from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
     times.push({ perfil, periodos: periodos.map((p) => indicadores(p, delivery, suporte, saude)) });
   }

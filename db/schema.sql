@@ -78,6 +78,7 @@ create table if not exists leituras (
 create table if not exists saude_time (
   time                   text not null,
   periodo_id             text not null,
+  frente                 text not null default '',  -- '' quando o health check é do time inteiro
   health_check_id        text not null,
   data                   date not null,
   prod_coletiva          numeric,   -- média 1–5 de "o sprint foi"
@@ -87,6 +88,10 @@ create table if not exists saude_time (
   produtividade          numeric,   -- (coletiva + individual) / 2 / 5
   motivacao              numeric,   -- (individual + coletiva) / 2 / 5
   respostas              int not null,
-  coletado_em            timestamptz not null default now(),
-  primary key (time, periodo_id)
+  coletado_em            timestamptz not null default now()
 );
+
+-- Migração: um health check por frente (ex.: TRG = Retaguarda e X-Retaguarda).
+alter table saude_time add column if not exists frente text not null default '';
+alter table saude_time drop constraint if exists saude_time_pkey;
+create unique index if not exists saude_time_chave on saude_time (time, periodo_id, frente);
