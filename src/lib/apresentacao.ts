@@ -1,6 +1,6 @@
 import { PERFIS, type Perfil } from "../config/perfis";
 import { db } from "./db";
-import { indicadores, type Indicadores, type LinhaDelivery, type LinhaSuporte, type Periodo } from "./indicadores";
+import { indicadores, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
 
 export type DadosTime = { perfil: Perfil; periodos: Indicadores[] };
 export type DadosDeck = { deck: string; rotulo: string; times: DadosTime[]; leituras: Record<string, string>; demo: boolean };
@@ -40,7 +40,10 @@ export async function carregarDeck(deck: string, projetos: string[]): Promise<Da
     const suporte = (await sql`
       select periodo_id, nivel, papel, tempo_resolucao_dias::float
       from itens_suporte where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSuporte[];
-    times.push({ perfil, periodos: periodos.map((p) => indicadores(p, delivery, suporte)) });
+    const saude = (await sql`
+      select periodo_id, produtividade::float, motivacao::float, respostas
+      from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
+    times.push({ perfil, periodos: periodos.map((p) => indicadores(p, delivery, suporte, saude)) });
   }
   const leituras: Record<string, string> = {};
   for (const l of (await sql`select time, slide, texto from leituras where deck = ${deck}`) as { time: string; slide: string; texto: string }[]) {
@@ -75,6 +78,8 @@ export function deckDemo(deck: string, projetos: string[]): DadosDeck {
         porRoadmap: { "Grandes entregas": Math.round(pts * 0.45), "Pequenas entregas": Math.round(pts * 0.25), "Suporte/rotina": Math.round(pts * 0.2), "Evolução técnica": pts - Math.round(pts * 0.45) - Math.round(pts * 0.25) - Math.round(pts * 0.2) },
         chamados, chamadosN3: Math.round(chamados * (0.2 + rnd() * 0.5)), trabalhoN3: perfil.projeto === "IC" ? Math.round(rnd() * 6) : 0,
         resolucaoP50: Math.round((1 + rnd() * 5) * 10) / 10,
+        produtividade: perfil.teamRetroId ? 0.76 + rnd() * 0.22 : null,
+        motivacao: perfil.teamRetroId ? 0.78 + rnd() * 0.2 : null,
       };
     });
     return { perfil, periodos };

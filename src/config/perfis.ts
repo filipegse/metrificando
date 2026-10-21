@@ -54,27 +54,29 @@ export type Perfil = {
   /** null = todos os tipos da TAP (menos excluídos e suporte). */
   tiposDelivery: string[] | null;
   suporte: FonteSuporte[];
+  /** Time no TeamRetro (health check Squad Feeling v2). */
+  teamRetroId?: string;
 };
 
 export const PERFIS: Perfil[] = [
   {
-    time: "SchoolOps", projeto: "SCOPS", metodologia: "scrum", periodo: "sprint",
+    time: "SchoolOps", teamRetroId: "7m1bAHWetJTP0B5N7pbZIX", projeto: "SCOPS", metodologia: "scrum", periodo: "sprint",
     campoFrente: null, mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SNS", mapa: S.SUPORTE_SNS, statusResolucao: "Resolvido", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Desenrola", projeto: "DSR", metodologia: "scrum", periodo: "sprint",
+    time: "Desenrola", teamRetroId: "6DZVmOh8wNlaC7R5Op0IDv", projeto: "DSR", metodologia: "scrum", periodo: "sprint",
     campoFrente: null, mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SA", mapa: S.SUPORTE_SA, statusResolucao: "Resolvido", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Nexus", projeto: "NXS", metodologia: "scrum", periodo: "sprint",
+    time: "Nexus", teamRetroId: "1XtWnmAm96BUaqWKtZrP6O", projeto: "NXS", metodologia: "scrum", periodo: "sprint",
     campoFrente: { id: CAMPOS.frenteDeTrabalho, nome: "Frente de Trabalho" },
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Nexus", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Rematrix", projeto: "IC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-09-09",
+    time: "Rematrix", teamRetroId: "4dG5bApVdvVffVbcJlCNgA", projeto: "IC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-09-09",
     campoFrente: null, mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [
       { projeto: "SC", mapa: S.SUPORTE_SC, statusResolucao: "Resolvido", papel: "chamado", naSprint: false },
@@ -82,7 +84,7 @@ export const PERFIS: Perfil[] = [
     ],
   },
   {
-    time: "Eficientes", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29",
+    time: "Eficientes", teamRetroId: "5AdSqS9J5M8Zk9pLNLZwoG", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29",
     campoFrente: { id: CAMPOS.frente, nome: "Frente" },
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],

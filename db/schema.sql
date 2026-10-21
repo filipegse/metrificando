@@ -73,3 +73,20 @@ create table if not exists leituras (
   atualizado_em timestamptz not null default now(),
   primary key (deck, time, slide)
 );
+
+-- Health check do TeamRetro (Squad Feeling v2), só agregado por time. Sem FK para sobreviver à recoleta do período.
+create table if not exists saude_time (
+  time                   text not null,
+  periodo_id             text not null,
+  health_check_id        text not null,
+  data                   date not null,
+  prod_coletiva          numeric,   -- média 1–5 de "o sprint foi"
+  prod_individual        numeric,   -- média 1–5 de "meu trabalho foi"
+  mot_individual         numeric,   -- média 1–5 de "me senti motivado"
+  mot_coletiva           numeric,   -- média 1–5 de "senti o time motivado"
+  produtividade          numeric,   -- (coletiva + individual) / 2 / 5
+  motivacao              numeric,   -- (individual + coletiva) / 2 / 5
+  respostas              int not null,
+  coletado_em            timestamptz not null default now(),
+  primary key (time, periodo_id)
+);

@@ -6,6 +6,7 @@ export type LinhaDelivery = {
   planejamento: string | null; categoria_roadmap: string | null; entregue: boolean; cycle_time_dias: number | null;
 };
 export type LinhaSuporte = { periodo_id: string; nivel: string | null; papel: string; tempo_resolucao_dias: number };
+export type LinhaSaude = { periodo_id: string; produtividade: number | null; motivacao: number | null; respostas: number };
 export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string };
 
 export type Indicadores = {
@@ -26,6 +27,9 @@ export type Indicadores = {
   chamadosN3: number;
   trabalhoN3: number;
   resolucaoP50: number | null;
+  /** Health check do TeamRetro (fração 0–1). */
+  produtividade: number | null;
+  motivacao: number | null;
 };
 
 export type Semaforo = "bom" | "atencao" | "ruim" | "neutro";
@@ -54,7 +58,8 @@ function agrupar(itens: LinhaDelivery[], chave: (i: LinhaDelivery) => string): R
   return r;
 }
 
-export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte: LinhaSuporte[]): Indicadores {
+export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte: LinhaSuporte[], saude: LinhaSaude[] = []): Indicadores {
+  const h = saude.find((x) => x.periodo_id === periodo.periodo_id);
   const d = delivery.filter((i) => i.periodo_id === periodo.periodo_id);
   const s = suporte.filter((i) => i.periodo_id === periodo.periodo_id);
   const entregues = d.filter((i) => i.entregue);
@@ -81,6 +86,8 @@ export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte
     chamadosN3: chamados.filter((i) => i.nivel === "N3").length,
     trabalhoN3: s.filter((i) => i.papel === "trabalho_n3").length,
     resolucaoP50: percentil(chamados.map((i) => i.tempo_resolucao_dias), 0.5),
+    produtividade: h?.produtividade ?? null,
+    motivacao: h?.motivacao ?? null,
   };
 }
 
@@ -99,4 +106,10 @@ export function corPontos(v: number, mediana: number | null): Semaforo {
   if (!mediana) return "neutro";
   const r = v / mediana;
   return r >= 1.1 - 1e-9 ? "bom" : r <= 0.85 + 1e-9 ? "atencao" : "neutro";
+}
+
+/** Produtividade e motivação (health check): ≥ 90% bom, < 80% atenção. */
+export function corSaude(v: number | null): Semaforo {
+  if (v == null) return "neutro";
+  return v >= 0.9 - 1e-9 ? "bom" : v < 0.8 ? "atencao" : "neutro";
 }

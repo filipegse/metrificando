@@ -3,7 +3,7 @@
 import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
 import { carregarDeck, chaveLeitura, deckDemo, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
-import { corEntrega, corExtras, corPontos, percentil, type Indicadores } from "@/lib/indicadores";
+import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
 import { Barras, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
@@ -92,6 +92,10 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     ["Itens entregues", (p) => p.itensEntregues],
     ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
     ["Chamados resolvidos (N3)", (p) => `${p.chamados} (${p.chamadosN3})`],
+    ...(t.perfil.teamRetroId ? [
+      ["Produtividade", (p: Indicadores) => <span className={`s-${corSaude(p.produtividade)}`}>{pct(p.produtividade)}</span>],
+      ["Motivação", (p: Indicadores) => <span className={`s-${corSaude(p.motivacao)}`}>{pct(p.motivacao)}</span>],
+    ] as [string, (p: Indicadores) => React.ReactNode][] : []),
   ];
   // Kanban tem muitas semanas: a matriz mostra as 8 mais recentes.
   const psMatriz = ps.slice(-8);
@@ -109,7 +113,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
         </tbody>
       </table>
       <div className="cards">
-        {[["c1", "Entrega e pontuação"], ["c2", "Fluxo"], ["c3", "Suporte"]].map(([k, titulo]) => (
+        {[["c1", "Entrega e pontuação"], ["c2", "Fluxo e suporte"], ["c3", "Moral do time"]].map(([k, titulo]) => (
           <div className="card" key={k}><h4>{titulo}</h4>{L(`matriz-${k}`)}</div>
         ))}
       </div>
@@ -146,6 +150,16 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <Faixa slide="cycle" />
     </Slide>,
   );
+
+  if (t.perfil.teamRetroId) {
+    slides.push(
+      <Slide key="saude" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="MORAL DO TIME" titulo="Produtividade e motivação" sub="Health check TeamRetro (Squad Feeling v2) · média das percepções coletiva e individual" />
+        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#0E1A15" }]} formato={pct} referencia={{ valor: 0.9, rotulo: "90%" }} /></div>
+        <Faixa slide="saude" />
+      </Slide>,
+    );
+  }
 
   if (scrum) {
     slides.push(

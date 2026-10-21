@@ -15,6 +15,7 @@ Jira Automation ──POST──▶ /api/webhooks/jira  (netlify/functions/jira-
                                  ▼
                     coleta-background (até 15 min): perfil → API do Jira → normalização → Postgres
 rede-seguranca (diária): reprocessa sprints fechadas sem coleta ok
+saude-diaria (diária): health checks fechados do TeamRetro → saude_time
 Next.js (app/): visões
 ```
 
@@ -39,13 +40,19 @@ vazão (Kanban), desempenho COM/SEM SDD, tempo de ciclo, composições, roadmap,
 destaques. Os textos de leitura são editados no próprio slide e salvos no banco (tabela
 `leituras`). `demo=1` usa dados fictícios. Teclas: ← → navegar, F tela cheia, P imprimir/PDF.
 
+Produtividade e motivação vêm do health check do TeamRetro (modelo Squad Feeling v2):
+produtividade = média("o sprint foi", "meu trabalho foi") ÷ 5 e motivação = média("me senti
+motivado", "senti o time motivado") ÷ 5. O health check é associado à sprint com fim mais
+próximo (até 7 dias) ou, em Kanban, à semana que contém a data. Só agregados são gravados.
+TRG e CF não têm time no TeamRetro.
+
 Fora do deck por enquanto: ganho SDD e pontos de esforço (vêm da planilha auxiliar SDD, não
-do Jira), produtividade e motivação (TeamRetro), acumulados entre trimestres.
+do Jira) e acumulados entre trimestres.
 
 ## Configuração
 
 1. Netlify: ligar o repositório ao site e ativar o **Netlify DB** (define `NETLIFY_DATABASE_URL`).
-2. Variáveis de ambiente (ver `.env.example`): `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `WEBHOOK_TOKEN`
+2. Variáveis de ambiente (ver `.env.example`): `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `WEBHOOK_TOKEN`, `TEAMRETRO_API_KEY`
    e, até existir login, `APP_USUARIO`/`APP_SENHA` (senha única para abrir a aplicação).
 3. Aplicar o schema: `npm run db:schema` (com a URL do banco no ambiente).
 4. Jira Automation:
