@@ -4,6 +4,20 @@
 export const PALETA = ["#00e175", "#007875", "#61807a", "#ffbf00", "#6e00ff", "#1433b0", "#ff47ff", "#c74f24"];
 export const COR = { texto: "#000000", eixo: "#61807a", grade: "#dfe6e4", referencia: "#c74f24" };
 
+/**
+ * Cor fixa por categoria, para a mesma categoria ter a mesma cor em todos os gráficos.
+ * Verdes (institucional) = entrega · rosas (pedagógico) = bug e suporte · azuis (ESG) = tecnologia ·
+ * roxos (pedagógico) = operacional e ajuste.
+ */
+export const COR_CATEGORIA: Record<string, string> = {
+  "História": "#00e175", "Grandes entregas": "#00e175", "Pequenas entregas": "#007875",
+  "Tecnologia": "#1433b0", "Evolução técnica": "#00dbff",
+  "Correção": "#ff47ff", "Suporte/rotina": "#ff9eff",
+  "Operacional": "#6e00ff", "Ajuste": "#594582",
+  "Planejado": "#00e175", "Extra": "#007875", "Bônus": "#61807a",
+  "Sem categoria": "#c9d3d0", "Sem classificação": "#c9d3d0", "Outro": "#c9d3d0",
+};
+
 /** Preto ou branco, o que tiver mais contraste com o fundo. */
 export function textoSobre(hex: string) {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));

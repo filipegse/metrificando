@@ -15,6 +15,9 @@
 .moldura.ativo { display: block; }
 .slide { position: relative; width: 1280px; height: 720px; background: var(--branco); color: var(--ink); overflow: hidden; padding: 30px 60px 0; }
 .slide.escuro { background: var(--petroleo); color: var(--verde); }
+/* Paleta Pedagógico (Nexus, Eficientes): roxo de fundo, rosa claro no título. */
+.slide.escuro.pedagogico { background: #6e00ff; color: #ff9eff; }
+.slide.pedagogico .rodape { color: #ff9eff; }
 .slide.verde { background: var(--verde); color: var(--preto); }
 .grafismo { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .sinal { position: absolute; left: 22px; top: 22px; width: 26px; height: 30px; background: url("/marca/sinal.svg") no-repeat center / contain; }

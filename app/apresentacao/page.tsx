@@ -5,7 +5,7 @@ import { PERFIS } from "@/config/perfis";
 import { carregarDeck, chaveLeitura, deckDemo, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
 import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
 import { urlBanco } from "@/lib/db";
-import { Barras, Linhas } from "./graficos";
+import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
 import "./deck.css";
@@ -27,7 +27,10 @@ const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecno
 
 function series(periodos: Indicadores[], campo: "porPlanejamento" | "porTipo" | "porRoadmap", nomes?: Record<string, string>) {
   const chaves = [...new Set(periodos.flatMap((p) => Object.keys(p[campo])))];
-  return chaves.map((c) => ({ nome: nomes?.[c] ?? c, valores: periodos.map((p) => p[campo][c] ?? 0) }));
+  return chaves.map((c) => {
+    const nome = nomes?.[c] ?? c;
+    return { nome, valores: periodos.map((p) => p[campo][c] ?? 0), cor: COR_CATEGORIA[nome] };
+  });
 }
 
 const secao = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
@@ -43,7 +46,7 @@ function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string;
 }
 
 /** Grafismos Movimento do brandbook: retângulos inclinados em progressão. */
-function Grafismo({ tipo }: { tipo: "linhas" | "blocos" }) {
+function Grafismo({ tipo, cor = "#00e175" }: { tipo: "linhas" | "blocos"; cor?: string }) {
   if (tipo === "linhas") {
     const linhas = [[150, 0, 90, 300], [300, 0, 250, 220], [470, 0, 420, 160], [590, 0, 555, 90], [1240, 40, 1262, 540], [1190, 290, 1196, 560]];
     return (
@@ -55,14 +58,17 @@ function Grafismo({ tipo }: { tipo: "linhas" | "blocos" }) {
   const blocos = ["1090,0 1280,0 1280,300 1120,290", "980,90 1100,95 1060,560 940,550", "860,330 960,340 900,700 800,690", "720,470 790,480 740,720 670,720"];
   return (
     <svg className="grafismo" viewBox="0 0 1280 720" aria-hidden>
-      {blocos.map((p, i) => <polygon key={i} points={p} fill="#00e175" opacity={0.18 + i * 0.06} />)}
+      {blocos.map((p, i) => <polygon key={i} points={p} fill={cor} opacity={0.18 + i * 0.06} />)}
     </svg>
   );
 }
 
-function Slide({ children, escuro, rodape, demo }: { children: React.ReactNode; escuro?: boolean; rodape?: string; demo?: boolean }) {
+/** Times da área pedagógica usam a paleta Pedagógico do brandbook na capa. */
+const PEDAGOGICOS = new Set(["NXS", "EFC"]);
+
+function Slide({ children, escuro, rodape, demo, pedagogico }: { children: React.ReactNode; escuro?: boolean; rodape?: string; demo?: boolean; pedagogico?: boolean }) {
   return (
-    <section className={`slide ${escuro ? "escuro" : ""}`}>
+    <section className={`slide ${escuro ? "escuro" : ""} ${pedagogico ? "pedagogico" : ""}`}>
       {!escuro && <span className="sinal" aria-hidden />}
       {children}
       {demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
@@ -85,8 +91,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const intervalo = ps.length ? `${rotulo(ps[0])} a ${rotulo(ps.at(-1)!)}` : "sem períodos coletados";
 
   const capa = (
-    <Slide escuro key="capa" demo={d.demo}>
-      <Grafismo tipo="blocos" />
+    <Slide escuro key="capa" demo={d.demo} pedagogico={PEDAGOGICOS.has(t.perfil.projeto)}>
+      <Grafismo tipo="blocos" cor={PEDAGOGICOS.has(t.perfil.projeto) ? "#ff47ff" : "#00e175"} />
       <span className="tap" aria-label="TAP" />
       <span className="assinatura branca" aria-label="Grupo Salta" />
       <div className="capa">
