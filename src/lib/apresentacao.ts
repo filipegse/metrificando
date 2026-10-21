@@ -26,16 +26,43 @@ export function chaveLeitura(time: string, slide: string) {
   return `${time}:${slide}`;
 }
 
-export async function carregarDeck(deck: string, projetos: string[]): Promise<DadosDeck> {
-  const { de, ate, rotulo } = intervaloTrimestre(deck);
+/** Recorte escolhido na página inicial: sprints específicas (Scrum) ou intervalo de datas (Kanban). */
+export type Recorte = { sprints?: string[]; de?: string; ate?: string };
+
+/** Lê `s_DSR=123,124` e `de_EFC=2026-09-01&ate_EFC=2026-10-15` da URL. */
+export function recortesDaUrl(q: Record<string, string | undefined>): Record<string, Recorte> {
+  const r: Record<string, Recorte> = {};
+  for (const [k, v] of Object.entries(q)) {
+    const m = /^(s|de|ate)_([A-Z0-9]+)$/.exec(k);
+    if (!m || !v) continue;
+    const alvo = (r[m[2]] ??= {});
+    if (m[1] === "s") alvo.sprints = v.split(",").filter(Boolean);
+    else alvo[m[1] as "de" | "ate"] = v;
+  }
+  return r;
+}
+
+/** Fim do dia `ate` (inclusivo), no horário da Bahia. */
+const fimDoDia = (dia: string) => new Date(new Date(`${dia}T00:00:00-03:00`).getTime() + 24 * 60 * 60 * 1000).toISOString();
+const inicioDoDia = (dia: string) => new Date(`${dia}T00:00:00-03:00`).toISOString();
+
+export async function carregarDeck(deck: string, projetos: string[], recortes: Record<string, Recorte> = {}): Promise<DadosDeck> {
+  const trimestre = intervaloTrimestre(deck);
+  const personalizado = Object.keys(recortes).length > 0;
+  const rotulo = personalizado ? "Período selecionado" : trimestre.rotulo;
   const perfis = PERFIS.filter((p) => projetos.includes(p.projeto));
   const sql = db();
   const times: DadosTime[] = [];
   for (const perfil of perfis) {
-    // Período entra no trimestre pela data de fim (sprint fechada / janela fechada).
-    const periodos = (await sql`
-      select periodo_id, nome, tipo, frente, inicio::text, fim::text from periodos
-      where time = ${perfil.time} and fim >= ${de} and fim < ${ate} order by fim`) as Periodo[];
+    // Sem recorte, o período entra no trimestre pela data de fim (sprint fechada / janela fechada).
+    const r = recortes[perfil.projeto] ?? {};
+    const de = r.de ? inicioDoDia(r.de) : trimestre.de;
+    const ate = r.ate ? fimDoDia(r.ate) : trimestre.ate;
+    const periodos = (r.sprints
+      ? await sql`select periodo_id, nome, tipo, frente, inicio::text, fim::text from periodos
+          where time = ${perfil.time} and periodo_id = any(${r.sprints}) order by fim`
+      : await sql`select periodo_id, nome, tipo, frente, inicio::text, fim::text from periodos
+          where time = ${perfil.time} and fim >= ${de} and fim < ${ate} order by fim`) as Periodo[];
     const ids = periodos.map((p) => p.periodo_id);
     const delivery = (await sql`
       select periodo_id, tipo_canonico, sp_sdd::float, sp_sem_sdd::float, planejamento, categoria_roadmap, entregue, cycle_time_dias::float

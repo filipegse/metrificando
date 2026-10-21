@@ -22,6 +22,16 @@ type Resumo = {
   chamados: number; n3: number; resolucao_p50: number | null;
 };
 
+type PeriodoDisponivel = { time: string; periodo_id: string; nome: string | null; frente: string; fim: string };
+
+/** Sprints coletadas de cada time, da mais recente para a mais antiga. */
+async function sprintsDisponiveis(): Promise<PeriodoDisponivel[]> {
+  if (!urlBanco()) return [];
+  return (await db()`
+    select time, periodo_id, nome, frente, fim::text from periodos
+    where tipo = 'sprint' order by fim desc limit 600`) as PeriodoDisponivel[];
+}
+
 async function carregar(): Promise<Resumo[]> {
   if (!urlBanco()) return [];
   const sql = db();
@@ -46,7 +56,7 @@ const fmt = (v: number | null, sufixo = "") => (v == null ? "—" : `${Math.roun
 const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Bahia" });
 
 export default async function Pagina() {
-  const resumos = await carregar();
+  const [resumos, sprints] = await Promise.all([carregar(), sprintsDisponiveis()]);
   return (
     <main>
       <h1>Métricas da TAP</h1>
@@ -56,6 +66,9 @@ export default async function Pagina() {
         return {
           projeto: perfil.projeto,
           time: perfil.time,
+          metodologia: perfil.metodologia,
+          sprints: sprints.filter((x) => x.time === perfil.time)
+            .map((x) => ({ id: x.periodo_id, nome: x.frente && x.frente !== perfil.time ? `${x.nome} (${x.frente})` : x.nome ?? x.periodo_id, fim: x.fim })),
           conteudo: (
             <>
               <h2>{perfil.time}</h2>

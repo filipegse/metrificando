@@ -2,7 +2,7 @@
 // /apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC  (demo=1 usa dados fictícios)
 import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
-import { carregarDeck, chaveLeitura, deckDemo, nomeDoTime, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
+import { carregarDeck, chaveLeitura, deckDemo, nomeDoTime, recortesDaUrl, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
 import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
 import { urlBanco } from "@/lib/db";
 import { numeroDe } from "@/lib/teamretro";
@@ -246,7 +246,7 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
   const deck = q.trimestre ?? trimestreAtual();
   const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
   const demo = q.demo === "1" || (!urlBanco());
-  const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos);
+  const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos, recortesDaUrl(q));
 
   return (
     <div className={fonte.variable}>

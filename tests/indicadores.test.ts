@@ -58,3 +58,12 @@ describe("saúde com frentes", () => {
     expect(h.motivacao).toBeCloseTo(0.85);
   });
 });
+
+describe("recortes da URL", async () => {
+  const { recortesDaUrl } = await import("../src/lib/apresentacao");
+  it("lê sprints e intervalos por projeto", () => {
+    expect(recortesDaUrl({ trimestre: "2026-Q4", s_DSR: "101,102", de_EFC: "2026-09-01", ate_EFC: "2026-10-15" })).toEqual({
+      DSR: { sprints: ["101", "102"] }, EFC: { de: "2026-09-01", ate: "2026-10-15" },
+    });
+  });
+});
