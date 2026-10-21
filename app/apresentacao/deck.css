@@ -73,6 +73,8 @@ table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-
 .controles { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; gap: 14px; padding: 0 16px; color: #9fb1ad; font-size: 13px; }
 .controles button { background: none; border: 1px solid #2a3a33; color: #fff; border-radius: 6px; width: 30px; height: 26px; cursor: pointer; font-size: 18px; line-height: 1; }
 .controles .dica { margin-left: auto; }
+.controles .voltar-selecao { color: var(--verde); font-weight: 700; text-decoration: none; border: 1px solid #2a3a33; border-radius: 6px; padding: 3px 10px; white-space: nowrap; }
+.controles .voltar-selecao:hover { border-color: var(--verde); }
 .progresso { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--verde); transition: width .2s; }
 .vazio { position: absolute; left: 60px; right: 60px; top: 220px; text-align: center; color: var(--muted); font-size: 20px; }
 

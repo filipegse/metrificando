@@ -1,7 +1,7 @@
 "use client";
 // Seleção dos times e do recorte de cada um para o deck da Sync.
 // Scrum: escolha das sprints coletadas. Kanban: intervalo de datas (semanas sáb–sex que fecham no intervalo).
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type Sprint = { id: string; nome: string; fim: string };
 type Cartao = { projeto: string; time: string; metodologia: "scrum" | "kanban"; sprints: Sprint[]; frentes: string[]; conteudo: ReactNode };
@@ -23,18 +23,33 @@ function recortePadrao(c: Cartao, trimestre: string): Recorte {
   return { sprints: new Set(doTrimestre.map((s) => s.id)), de: l.de, ate: l.ate };
 }
 
-export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres: string[] }) {
-  const [marcados, setMarcados] = useState<Set<string>>(new Set());
-  const [trimestre, setTrimestre] = useState(trimestres[0]);
+type Inicial = Record<string, string | undefined>;
+
+export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao[]; trimestres: string[]; inicial?: Inicial }) {
+  // Ao voltar da apresentação, a URL traz a seleção anterior (mesmos parâmetros do deck).
+  const [marcados, setMarcados] = useState<Set<string>>(() => new Set((inicial.times ?? "").split(",").filter((p) => cartoes.some((c) => c.projeto === p))));
+  const [trimestre, setTrimestre] = useState(inicial.trimestre && trimestres.includes(inicial.trimestre) ? inicial.trimestre : trimestres[0]);
+  const primeiraVez = useRef(true);
   const [recortes, setRecortes] = useState<Record<string, Recorte>>({});
-  const [personalizar, setPersonalizar] = useState(false);
+  const [personalizar, setPersonalizar] = useState(() => Object.keys(inicial).some((k) => /^(s|de|ate)_/.test(k)));
   // Times com frentes (Nexus, Eficientes): deck geral ou por frente.
-  const [porFrente, setPorFrente] = useState<Set<string>>(new Set());
+  const [porFrente, setPorFrente] = useState<Set<string>>(() => new Set(Object.keys(inicial).filter((k) => k.startsWith("f_") && inicial[k] === "frentes").map((k) => k.slice(2))));
 
   // Trocar o trimestre recalcula o recorte padrão de todos os times.
   useEffect(() => {
-    setRecortes(Object.fromEntries(cartoes.map((c) => [c.projeto, recortePadrao(c, trimestre)])));
-  }, [trimestre, cartoes]);
+    const padrao = Object.fromEntries(cartoes.map((c) => [c.projeto, recortePadrao(c, trimestre)]));
+    // Só na primeira montagem: recortes vindos da URL sobrepõem o padrão.
+    if (primeiraVez.current) {
+      primeiraVez.current = false;
+      for (const c of cartoes) {
+        const s = inicial[`s_${c.projeto}`], de = inicial[`de_${c.projeto}`], ate = inicial[`ate_${c.projeto}`];
+        if (s) padrao[c.projeto] = { ...padrao[c.projeto], sprints: new Set(s === "nenhuma" ? [] : s.split(",")) };
+        if (de) padrao[c.projeto] = { ...padrao[c.projeto], de };
+        if (ate) padrao[c.projeto] = { ...padrao[c.projeto], ate };
+      }
+    }
+    setRecortes(padrao);
+  }, [trimestre, cartoes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const alternar = (p: string) =>
     setMarcados((m) => { const n = new Set(m); n.has(p) ? n.delete(p) : n.add(p); return n; });

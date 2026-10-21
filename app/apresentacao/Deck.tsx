@@ -3,7 +3,7 @@
 // ← → / PageUp PageDown / espaço navegam; F tela cheia; P imprime (PDF, um slide por página).
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-export function Deck({ children }: { children: ReactNode }) {
+export function Deck({ children, voltar }: { children: ReactNode; voltar: string }) {
   const slides = Children.toArray(children);
   const [i, setI] = useState(0);
   const [escala, setEscala] = useState(1);
@@ -32,10 +32,11 @@ export function Deck({ children }: { children: ReactNode }) {
       else if (e.key === "End") setI(slides.length - 1);
       else if (e.key === "f") document.documentElement.requestFullscreen?.();
       else if (e.key === "p") window.print();
+      else if (e.key === "Escape" && !document.fullscreenElement) location.href = voltar;
     };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
-  }, [ir, slides.length]);
+  }, [ir, slides.length, voltar]);
 
   return (
     <div className="deck">
@@ -51,7 +52,8 @@ export function Deck({ children }: { children: ReactNode }) {
         <button onClick={() => ir(-1)} aria-label="Slide anterior">‹</button>
         <span>{i + 1} / {slides.length}</span>
         <button onClick={() => ir(1)} aria-label="Próximo slide">›</button>
-        <span className="dica">← → navegar · F tela cheia · P imprimir/PDF</span>
+        <span className="dica">← → navegar · F tela cheia · P imprimir/PDF · Esc voltar</span>
+        <a className="voltar-selecao" href={voltar}>← Seleção de times</a>
       </nav>
       <div className="progresso" style={{ width: `${((i + 1) / slides.length) * 100}%` }} />
     </div>

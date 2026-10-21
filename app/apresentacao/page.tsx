@@ -286,11 +286,13 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
   const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
   const demo = q.demo === "1" || q.demo === "misto" || (!urlBanco());
   const recortes = recortesDaUrl(q);
+  // Volta para a página inicial com a mesma seleção (times, trimestre, frentes e recortes).
+  const voltar = `/?${new URLSearchParams(Object.entries(q).filter(([k, v]) => v && k !== "demo") as [string, string][]).toString()}`;
   const d = demo ? deckDemo(deck, projetos, recortes, q.demo === "misto") : await carregarDeck(deck, projetos, recortes);
 
   return (
     <div className={fonte.variable}>
-      <Deck>
+      <Deck voltar={voltar}>
         <section className="slide verde" key="abertura">
           <Grafismo tipo="linhas" />
           <div className="capa">
