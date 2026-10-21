@@ -41,7 +41,10 @@ export function Deck({ children }: { children: ReactNode }) {
     <div className="deck">
       <div className="palco" ref={palco}>
         {slides.map((s, k) => (
-          <div key={k} className={`moldura ${k === i ? "ativo" : ""}`} style={{ transform: `scale(${escala})` }}>{s}</div>
+          <div key={k} className={`moldura ${k === i ? "ativo" : ""}`} style={{ transform: `scale(${escala})` }}>
+            {s}
+            {k > 0 && <span className="numero">{k + 1}</span>}
+          </div>
         ))}
       </div>
       <nav className="controles">

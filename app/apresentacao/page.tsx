@@ -10,7 +10,8 @@ import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
 import "./deck.css";
 
-const fonte = Work_Sans({ subsets: ["latin"], weight: ["400", "600", "700", "800"] });
+// Reserva até os arquivos da At Hauss Aero (fonte oficial, licenciada) estarem em public/fonts.
+const fonte = Work_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--fonte-reserva" });
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sync de Agilidade — Metrificando" };
@@ -29,19 +30,40 @@ function series(periodos: Indicadores[], campo: "porPlanejamento" | "porTipo" | 
   return chaves.map((c) => ({ nome: nomes?.[c] ?? c, valores: periodos.map((p) => p[campo][c] ?? 0) }));
 }
 
+const secao = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
+
 function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string; titulo: string; sub?: string }) {
   return (
     <>
-      <div className="eyebrow">{t.perfil.time} · {eyebrow}</div>
+      <div className="trilha">Sync de Agilidade &gt; {t.perfil.time} &gt; <b>{secao(eyebrow)}</b></div>
       <h1>{titulo}</h1>
       {sub && <div className="subtitulo">{sub}</div>}
     </>
   );
 }
 
+/** Grafismos Movimento do brandbook: retângulos inclinados em progressão. */
+function Grafismo({ tipo }: { tipo: "linhas" | "blocos" }) {
+  if (tipo === "linhas") {
+    const linhas = [[150, 0, 90, 300], [300, 0, 250, 220], [470, 0, 420, 160], [590, 0, 555, 90], [1240, 40, 1270, 720], [1190, 290, 1200, 720], [1150, 500, 1135, 720], [1020, 640, 990, 720]];
+    return (
+      <svg className="grafismo" viewBox="0 0 1280 720" aria-hidden>
+        {linhas.map(([x1, y1, x2, y2], i) => <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={9} />)}
+      </svg>
+    );
+  }
+  const blocos = ["1090,0 1280,0 1280,300 1120,290", "980,90 1100,95 1060,560 940,550", "860,330 960,340 900,700 800,690", "720,470 790,480 740,720 670,720"];
+  return (
+    <svg className="grafismo" viewBox="0 0 1280 720" aria-hidden>
+      {blocos.map((p, i) => <polygon key={i} points={p} fill="#00e175" opacity={0.18 + i * 0.06} />)}
+    </svg>
+  );
+}
+
 function Slide({ children, escuro, rodape, demo }: { children: React.ReactNode; escuro?: boolean; rodape?: string; demo?: boolean }) {
   return (
     <section className={`slide ${escuro ? "escuro" : ""}`}>
+      {!escuro && <span className="sinal" aria-hidden />}
       {children}
       {demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
       <div className="rodape">{rodape ?? "Área TAP · Grupo Salta Educação"}</div>
@@ -64,12 +86,11 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
 
   const capa = (
     <Slide escuro key="capa" demo={d.demo}>
+      <Grafismo tipo="blocos" />
       <div className="capa">
-        <div className="marca">TAP</div>
-        <div className="eyebrow" style={{ color: "var(--neon)", marginTop: 24 }}>{t.perfil.time.toUpperCase()} · {d.rotulo}</div>
+        <div className="sub-capa">Área TAP · {d.rotulo}</div>
         <h1>{t.perfil.time}</h1>
-        <div className="linha-neon" />
-        <div className="sub" style={{ fontSize: 20 }}>{unidade}: {intervalo}</div>
+        <div className="sub">{unidade}: {intervalo}</div>
       </div>
     </Slide>
   );
@@ -147,7 +168,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     </Slide>,
     <Slide key="cycle" rodape={rodape} demo={d.demo}>
       <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub="Dias corridos do início do trabalho até Concluído · P50 e P85" />
-      <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#F57C00" }]} formato={num} /></div>
+      <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
       <Faixa slide="cycle" />
     </Slide>,
   );
@@ -156,7 +177,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     slides.push(
       <Slide key="saude" rodape={rodape} demo={d.demo}>
         <Cabecalho t={t} eyebrow="MORAL DO TIME" titulo="Produtividade e motivação" sub="Health check TeamRetro (Squad Feeling v2) · média das percepções coletiva e individual" />
-        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#0E1A15" }]} formato={pct} referencia={{ valor: 0.9, rotulo: "90%" }} /></div>
+        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#007875" }]} formato={pct} referencia={{ valor: 0.9, rotulo: "90%" }} /></div>
         <Faixa slide="saude" />
       </Slide>,
     );
@@ -188,8 +209,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <div className="grafico metade"><h3>Chamados por nível</h3>
         <Barras largura={560} rotulos={rot} series={[
           { nome: "N2", valores: ps.map((p) => p.chamados - p.chamadosN3) },
-          { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#F57C00" },
-          ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#0E1A15" }] : []),
+          { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#007875" },
+          ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#61807a" }] : []),
         ]} />
       </div>
       <div className="grafico metade"><h3>Tempo de resolução P50 (dias)</h3>
@@ -217,21 +238,24 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
   const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos);
 
   return (
-    <div className={fonte.className}>
+    <div className={fonte.variable}>
       <Deck>
-        <Slide escuro key="abertura" demo={d.demo}>
+        <section className="slide verde" key="abertura">
+          <Grafismo tipo="linhas" />
           <div className="capa">
-            <div className="marca">TAP</div>
-            <h1 style={{ marginTop: 24 }}>Sync de Agilidade</h1>
-            <div className="linha-neon" />
-            <div className="sub">{d.rotulo}</div>
+            <h1>Sync de Agilidade</h1>
+            <div className="sub">Área TAP · {d.rotulo}</div>
             <div className="times">{d.times.map((t) => t.perfil.time).join("   ·   ")}</div>
           </div>
-        </Slide>
+          <span className="assinatura" aria-label="Grupo Salta" />
+          {d.demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
+        </section>
         {d.times.flatMap((t) => slidesDoTime(d, t))}
-        <Slide escuro key="fim" demo={d.demo}>
-          <div className="capa"><div className="marca">TAP</div><h1 style={{ marginTop: 24 }}>Obrigado!</h1><div className="linha-neon" /></div>
-        </Slide>
+        <section className="slide verde" key="fim">
+          <Grafismo tipo="linhas" />
+          <div className="capa"><h1>Obrigado!</h1></div>
+          <span className="assinatura" aria-label="Grupo Salta" />
+        </section>
       </Deck>
     </div>
   );

@@ -1,6 +1,14 @@
 // Gráficos SVG sem dependência. Dimensão interna fixa; o slide é escalado inteiro.
 
-export const PALETA = ["#04A15C", "#0E1A15", "#9DB3A8", "#F57C00", "#00C46A", "#6C7B73"];
+// Paleta institucional Grupo Salta (brandbook) primeiro; depois um tom de cada paleta de área para séries extras.
+export const PALETA = ["#00e175", "#007875", "#61807a", "#ffbf00", "#6e00ff", "#1433b0", "#ff47ff", "#c74f24"];
+export const COR = { texto: "#000000", eixo: "#61807a", grade: "#dfe6e4", referencia: "#c74f24" };
+
+/** Preto ou branco, o que tiver mais contraste com o fundo. */
+export function textoSobre(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.2 ? "#000000" : "#ffffff";
+}
 
 type Serie = { nome: string; valores: (number | null)[]; cor?: string };
 type Props = {
@@ -18,7 +26,7 @@ const M = { t: 24, r: 16, b: 56, l: 48 };
 function Legenda({ series, y }: { series: Serie[]; y: number }) {
   let x = M.l;
   return (
-    <g fontSize={13} fill="#33413A">
+    <g fontSize={13} fill={COR.texto}>
       {series.map((s, i) => {
         const el = (
           <g key={s.nome} transform={`translate(${x},${y})`}>
@@ -44,7 +52,7 @@ export function Barras({ rotulos, series, modo = "agrupado", formato = (v) => St
   const fmt = modo === "empilhado100" ? (v: number) => `${Math.round(v * 100)}%` : formato;
   return (
     <svg viewBox={`0 0 ${largura} ${altura}`} width="100%" height="100%" role="img">
-      <line x1={M.l} x2={M.l + w} y1={M.t + h} y2={M.t + h} stroke="#E2EAE5" />
+      <line x1={M.l} x2={M.l + w} y1={M.t + h} y2={M.t + h} stroke={COR.grade} />
       {rotulos.map((r, k) => {
         const x0 = M.l + k * banda;
         if (modo === "empilhado100") {
@@ -58,11 +66,11 @@ export function Barras({ rotulos, series, modo = "agrupado", formato = (v) => St
                 return frac > 0 ? (
                   <g key={s.nome}>
                     <rect x={x0 + banda * 0.18} width={banda * 0.64} y={y1} height={y0 - y1} fill={s.cor ?? PALETA[i % PALETA.length]} />
-                    {y0 - y1 > 18 && <text x={x0 + banda / 2} y={(y0 + y1) / 2 + 5} textAnchor="middle" fontSize={12} fill={i === 1 ? "#fff" : "#13211B"}>{fmt(frac)}</text>}
+                    {y0 - y1 > 18 && <text x={x0 + banda / 2} y={(y0 + y1) / 2 + 5} textAnchor="middle" fontSize={12} fill={textoSobre(s.cor ?? PALETA[i % PALETA.length])}>{fmt(frac)}</text>}
                   </g>
                 ) : null;
               })}
-              <text x={x0 + banda / 2} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill="#6C7B73">{r}</text>
+              <text x={x0 + banda / 2} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill={COR.eixo}>{r}</text>
             </g>
           );
         }
@@ -76,18 +84,18 @@ export function Barras({ rotulos, series, modo = "agrupado", formato = (v) => St
               return (
                 <g key={s.nome}>
                   <rect x={bx} width={bw * 0.9} y={y(v)} height={M.t + h - y(v)} rx={3} fill={s.cor ?? PALETA[i % PALETA.length]} />
-                  <text x={bx + bw * 0.45} y={y(v) - 6} textAnchor="middle" fontSize={12} fill="#13211B">{fmt(v)}</text>
+                  <text x={bx + bw * 0.45} y={y(v) - 6} textAnchor="middle" fontSize={12} fill={COR.texto}>{fmt(v)}</text>
                 </g>
               );
             })}
-            <text x={x0 + banda / 2} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill="#6C7B73">{r}</text>
+            <text x={x0 + banda / 2} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill={COR.eixo}>{r}</text>
           </g>
         );
       })}
       {referencia && (
         <g>
-          <line x1={M.l} x2={M.l + w} y1={y(referencia.valor)} y2={y(referencia.valor)} stroke="#F57C00" strokeDasharray="6 4" />
-          <text x={M.l + w} y={y(referencia.valor) - 6} textAnchor="end" fontSize={12} fill="#F57C00">{referencia.rotulo}</text>
+          <line x1={M.l} x2={M.l + w} y1={y(referencia.valor)} y2={y(referencia.valor)} stroke={COR.referencia} strokeDasharray="6 4" />
+          <text x={M.l + w} y={y(referencia.valor) - 6} textAnchor="end" fontSize={12} fill={COR.referencia}>{referencia.rotulo}</text>
         </g>
       )}
       <Legenda series={series} y={altura - 18} />
@@ -103,7 +111,7 @@ export function Linhas({ rotulos, series, formato = (v) => String(v), largura = 
   const y = (v: number) => M.t + h - (v / max) * h;
   return (
     <svg viewBox={`0 0 ${largura} ${altura}`} width="100%" height="100%" role="img">
-      <line x1={M.l} x2={M.l + w} y1={M.t + h} y2={M.t + h} stroke="#E2EAE5" />
+      <line x1={M.l} x2={M.l + w} y1={M.t + h} y2={M.t + h} stroke={COR.grade} />
       {series.map((s, i) => {
         const cor = s.cor ?? PALETA[i % PALETA.length];
         const pts = s.valores.map((v, k) => (v == null ? null : [x(k), y(v), v] as const)).filter((p) => p !== null);
@@ -113,14 +121,14 @@ export function Linhas({ rotulos, series, formato = (v) => String(v), largura = 
             {pts.map(([a, b, v], k) => (
               <g key={k}>
                 <circle cx={a} cy={b} r={4.5} fill={cor} />
-                <text x={a} y={b - 10} textAnchor="middle" fontSize={12} fill="#13211B">{formato(v)}</text>
+                <text x={a} y={b - 10} textAnchor="middle" fontSize={12} fill={COR.texto}>{formato(v)}</text>
               </g>
             ))}
           </g>
         );
       })}
       {rotulos.map((r, k) => (
-        <text key={r + k} x={x(k)} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill="#6C7B73">{r}</text>
+        <text key={r + k} x={x(k)} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill={COR.eixo}>{r}</text>
       ))}
       <Legenda series={series} y={altura - 18} />
     </svg>
