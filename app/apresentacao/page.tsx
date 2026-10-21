@@ -4,6 +4,7 @@ import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
 import { carregarDeck, chaveLeitura, deckDemo, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
 import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
+import { urlBanco } from "@/lib/db";
 import { Barras, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
@@ -212,7 +213,7 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
   const q = await searchParams;
   const deck = q.trimestre ?? trimestreAtual();
   const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
-  const demo = q.demo === "1" || (!process.env.NETLIFY_DATABASE_URL && !process.env.DATABASE_URL);
+  const demo = q.demo === "1" || (!urlBanco());
   const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos);
 
   return (

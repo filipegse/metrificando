@@ -1,6 +1,6 @@
 // Visão consolidada por time — último período coletado. Sem dimensão de pessoa (princípio de métricas da TAP).
 import { PERFIS } from "@/config/perfis";
-import { db } from "@/lib/db";
+import { db, urlBanco } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ type Resumo = {
 };
 
 async function carregar(): Promise<Resumo[]> {
-  if (!process.env.NETLIFY_DATABASE_URL && !process.env.DATABASE_URL) return [];
+  if (!urlBanco()) return [];
   const sql = db();
   return (await sql`
     with ultimo as (
