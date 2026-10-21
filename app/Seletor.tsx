@@ -1,6 +1,7 @@
 "use client";
 // Seleção dos times e do recorte de cada um para o deck da Sync.
 // Scrum: escolha das sprints coletadas. Kanban: intervalo de datas (semanas sáb–sex que fecham no intervalo).
+import { Icone } from "./componentes/Icone";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type Sprint = { id: string; nome: string; fim: string };
@@ -90,7 +91,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
         </button>
         <span className="contagem">{selecionados.length ? `${selecionados.length} time(s): ${selecionados.map((c) => c.time).join(", ")}` : "Selecione os times do deck"}</span>
         <a className={`botao ${selecionados.length ? "" : "desativado"}`} href={selecionados.length ? destino : undefined} aria-disabled={!selecionados.length}>
-          Gerar apresentação →
+          <Icone nome="apresentacao" /> Gerar apresentação
         </a>
       </div>
 

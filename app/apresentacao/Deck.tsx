@@ -1,6 +1,7 @@
 "use client";
 // Navegação do modo apresentação: um slide 1280×720 por vez, escalado para a tela.
 // ← → / PageUp PageDown / espaço navegam; F tela cheia; P imprime (PDF, um slide por página).
+import { Icone } from "../componentes/Icone";
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 export function Deck({ children, voltar }: { children: ReactNode; voltar: string }) {
@@ -49,11 +50,11 @@ export function Deck({ children, voltar }: { children: ReactNode; voltar: string
         ))}
       </div>
       <nav className="controles">
-        <button onClick={() => ir(-1)} aria-label="Slide anterior">‹</button>
+        <button onClick={() => ir(-1)} aria-label="Slide anterior"><Icone nome="voltar" tamanho={16} /></button>
         <span>{i + 1} / {slides.length}</span>
-        <button onClick={() => ir(1)} aria-label="Próximo slide">›</button>
+        <button onClick={() => ir(1)} aria-label="Próximo slide"><Icone nome="avancar" tamanho={16} /></button>
         <span className="dica">← → navegar · F tela cheia · P imprimir/PDF · Esc voltar</span>
-        <a className="voltar-selecao" href={voltar}>← Seleção de times</a>
+        <a className="voltar-selecao" href={voltar}><Icone nome="voltar" tamanho={14} /> Seleção de times</a>
       </nav>
       <div className="progresso" style={{ width: `${((i + 1) / slides.length) * 100}%` }} />
     </div>

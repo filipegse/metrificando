@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "../componentes/Icone";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lerUsuario, salvarUsuario } from "./usuario";
 
@@ -118,7 +119,7 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
           if (confirm(`Apagar ${alvo}? Fica registrado e pode ser desfeito linha a linha.`)) {
             chamar("/api/historico/linhas", "DELETE", { todas: true, chave: { time, frente: frente === "*" ? undefined : frente } }, "Períodos apagados.");
           }
-        }}>Apagar todos os exibidos</button>
+        }}><Icone nome="lixeira" tamanho={16} /> Apagar todos os exibidos</button>
       </section>
       {msg && <p className="msg">{msg}</p>}
 
@@ -147,10 +148,10 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
                       );
                     })}
                     <td className="acoes-linha">
-                      <button type="button" className="botao pequeno" disabled={!sujo} onClick={() => salvar(l)}>Salvar</button>
+                      <button type="button" className="botao pequeno" disabled={!sujo} onClick={() => salvar(l)}><Icone nome="salvar" tamanho={14} /> Salvar</button>
                       {sujo && <button type="button" className="link" onClick={() => setRascunho((x) => { const n = { ...x }; delete n[k]; return n; })}>descartar</button>}
                       <button type="button" className="link perigo" onClick={() => confirm(`Apagar "${l.nome}"?`) &&
-                        chamar("/api/historico/linhas", "DELETE", { chave: { time: l.time, frente: l.frente, nome: l.nome } }, `"${l.nome}" apagada.`)}>apagar</button>
+                        chamar("/api/historico/linhas", "DELETE", { chave: { time: l.time, frente: l.frente, nome: l.nome } }, `"${l.nome}" apagada.`)} title="Apagar período" aria-label="Apagar período"><Icone nome="lixeira" tamanho={16} /></button>
                     </td>
                   </tr>
                 );
@@ -188,7 +189,7 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
                             await chamar("/api/historico/auditoria", "POST", { id: a.id, forcar: true }, "Alteração desfeita.");
                           } else if (!r.ok) setMsg(`Erro: ${j.erro ?? r.status}`);
                           else { setMsg("Alteração desfeita."); recarregar(); }
-                        }} disabled={semNome}>desfazer</button>}
+                        }} disabled={semNome}><Icone nome="desfazer" tamanho={16} /> desfazer</button>}
                     </td>
                   </tr>
                 );
@@ -204,19 +205,19 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
 
 function NovaLinha({ time, frentes, criar }: { time: string; frentes: string[]; criar: (l: Record<string, unknown> & { nome: string }) => Promise<boolean> }) {
   const [aberto, setAberto] = useState(false);
-  if (!aberto) return <button type="button" className="link" onClick={() => setAberto(true)}>+ Adicionar período</button>;
+  if (!aberto) return <button type="button" className="link" onClick={() => setAberto(true)}><Icone nome="mais" tamanho={16} /> Adicionar período</button>;
   return (
     <form className="linha-form" onSubmit={async (e) => {
       e.preventDefault();
       const v = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
       if (await criar({ time, frente: v.frente, nome: v.nome, tipo: v.tipo, inicio: v.inicio || null, fim: v.fim })) setAberto(false);
     }}>
-      <select name="frente"><option value="">Time inteiro</option>{frentes.map((f) => <option key={f}>{f}</option>)}</select>
-      <input name="nome" placeholder="Nome da sprint/ciclo" required />
-      <select name="tipo"><option value="sprint">sprint</option><option value="semana">semana</option></select>
+      <label>Frente <select name="frente"><option value="">Time inteiro</option>{frentes.map((f) => <option key={f}>{f}</option>)}</select></label>
+      <label>Sprint / ciclo <input name="nome" placeholder="Ex.: S112 1.Q1.26" required /></label>
+      <label>Tipo <select name="tipo"><option value="sprint">sprint</option><option value="semana">semana</option></select></label>
       <label>Início <input name="inicio" type="date" /></label>
       <label>Fim <input name="fim" type="date" required /></label>
-      <button className="botao">Criar</button>
+      <button className="botao"><Icone nome="mais" tamanho={16} /> Criar</button>
       <button type="button" className="link" onClick={() => setAberto(false)}>cancelar</button>
     </form>
   );

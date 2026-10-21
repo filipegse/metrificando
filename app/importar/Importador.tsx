@@ -1,4 +1,5 @@
 "use client";
+import { Icone } from "../componentes/Icone";
 import { useEffect, useMemo, useState } from "react";
 import { lerUsuario } from "../dados/usuario";
 import { AUXILIARES, CAMPOS, VERSAO_MAPA, detectarCabecalho, lerCsv, montarLinhas, normalizar, sugerirMapa, type Campo } from "@/lib/importacao";
@@ -94,7 +95,13 @@ export function Importador() {
               {Object.entries(FONTES).map(([k, v]) => <option key={k} value={k}>{v.rotulo}</option>)}
             </select>
           </label>
-          <label>Arquivo CSV <input type="file" accept=".csv,text/csv" onChange={(e) => abrir(e.target.files?.[0])} /></label>
+          <label>Arquivo CSV
+            <span className="arquivo">
+              <span className="botao secundario"><Icone nome="importar" tamanho={16} /> Escolher arquivo</span>
+              <span className="nome-arquivo">{arquivo || "nenhum arquivo selecionado"}</span>
+              <input type="file" accept=".csv,text/csv" onChange={(e) => abrir(e.target.files?.[0])} />
+            </span>
+          </label>
           <label>Linha do cabeçalho
             <input type="number" min={1} max={Math.max(1, dados.length)} value={linhaTitulo} onChange={(e) => setLinhaTitulo(Number(e.target.value) || 1)} />
           </label>
@@ -111,7 +118,7 @@ export function Importador() {
             </select>
           </label>
         </div>
-        {arquivo && <p className="sub">{arquivo}: {dados.length} linhas lidas.</p>}
+        {arquivo && <p className="sub">{dados.length} linhas lidas.</p>}
       </section>
 
       {cabecalho.length > 0 && (
@@ -159,7 +166,7 @@ export function Importador() {
             </details>
           )}
           <div className="acoes">
-            <button type="button" className="botao" disabled={!resultado.linhas.length} onClick={importar}>Importar {resultado.linhas.length} período(s)</button>
+            <button type="button" className="botao" disabled={!resultado.linhas.length} onClick={importar}><Icone nome="importar" /> Importar {resultado.linhas.length} período(s)</button>
             <span className="sub">{estado}</span>
           </div>
         </section>

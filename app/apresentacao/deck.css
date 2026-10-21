@@ -5,6 +5,7 @@
 @font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Bold.woff2") format("woff2"); font-weight: 600 900; font-style: normal; font-display: swap; }
 @font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-BoldItalic.woff2") format("woff2"); font-weight: 600 900; font-style: italic; font-display: swap; }
 .deck {
+  z-index: 10;
   --verde: #00fa87; --verde-2: #00e175; --petroleo: #007875; --cinza-verde: #61807a;
   --preto: #000000; --branco: #ffffff; --fundo-suave: #f2f5f4; --linha: #dfe6e4;
   --atencao: #c74f24; --ink: var(--preto); --muted: var(--cinza-verde); --body: #1f2a27;
@@ -71,9 +72,9 @@ table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-
 .bloco .leitura { padding: 12px 14px; } .bloco textarea { height: 100%; }
 .selo-demo { position: absolute; right: 60px; top: 60px; z-index: 2; background: var(--atencao); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
 .controles { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; gap: 14px; padding: 0 16px; color: #9fb1ad; font-size: 13px; }
-.controles button { background: none; border: 1px solid #2a3a33; color: #fff; border-radius: 6px; width: 30px; height: 26px; cursor: pointer; font-size: 18px; line-height: 1; }
+.controles button { background: none; border: 1px solid #2a3a33; color: #fff; border-radius: 6px; width: 30px; height: 26px; cursor: pointer; display: grid; place-items: center; padding: 0; }
 .controles .dica { margin-left: auto; }
-.controles .voltar-selecao { color: var(--verde); font-weight: 700; text-decoration: none; border: 1px solid #2a3a33; border-radius: 6px; padding: 3px 10px; white-space: nowrap; }
+.controles .voltar-selecao { display: inline-flex; align-items: center; gap: 4px; color: var(--verde); font-weight: 700; text-decoration: none; border: 1px solid #2a3a33; border-radius: 6px; padding: 3px 10px; white-space: nowrap; }
 .controles .voltar-selecao:hover { border-color: var(--verde); }
 .progresso { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--verde); transition: width .2s; }
 .vazio { position: absolute; left: 60px; right: 60px; top: 220px; text-align: center; color: var(--muted); font-size: 20px; }

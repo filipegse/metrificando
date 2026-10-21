@@ -5,7 +5,6 @@ export const metadata = { title: "Importar histórico — Metrificando" };
 export default function Pagina() {
   return (
     <main>
-      <p className="voltar"><a href="/">← Métricas da TAP</a></p>
       <h1>Importar histórico</h1>
       <p className="sub">
         Exporte a aba da planilha como CSV (Arquivo → Fazer download → CSV) e envie aqui. As colunas são reconhecidas pelo
