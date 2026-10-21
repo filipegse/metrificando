@@ -13,7 +13,9 @@ if (!nome) {
 
 const sql = neon(process.env[nome]);
 const schema = await readFile(new URL("../db/schema.sql", import.meta.url), "utf8");
-for (const comando of schema.split(";").map((c) => c.trim()).filter(Boolean)) {
+// Remove comentários antes de dividir por ";" (um ";" dentro de comentário quebraria o comando).
+const semComentarios = schema.split("\n").map((l) => l.replace(/--.*$/, "")).join("\n");
+for (const comando of semComentarios.split(";").map((c) => c.trim()).filter(Boolean)) {
   await sql.query(comando);
 }
 console.log(`Schema aplicado (${nome}).`);

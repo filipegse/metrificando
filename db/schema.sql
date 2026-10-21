@@ -147,7 +147,7 @@ create table if not exists feriados (
   abrangencia  text not null check (abrangencia in ('nacional', 'estadual_rj', 'municipal_rj', 'evento_interno', 'folga'))
 );
 
--- Pessoas e alocações (uma linha por período em um time/frente/cargo; troca de time = nova linha).
+-- Pessoas e alocações (uma linha por período em um time/frente/cargo, e troca de time = nova linha).
 create table if not exists pessoas (
   id    bigserial primary key,
   nome  text not null unique
