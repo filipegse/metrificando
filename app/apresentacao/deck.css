@@ -1,10 +1,9 @@
 /* Identidade da Sync de Agilidade (ver sync-agilidade-deck/references/layout.md). */
 /* Identidade Grupo Salta (brandbook): paleta institucional verde, preto para texto, At Hauss Aero
    como família oficial (com Work Sans de reserva enquanto os arquivos da fonte não estão em public/fonts). */
-@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
-@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Semibold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Regular.woff2") format("woff2"); font-weight: 100 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-Bold.woff2") format("woff2"); font-weight: 600 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "At Hauss Aero"; src: url("/fonts/AtHaussAero-BoldItalic.woff2") format("woff2"); font-weight: 600 900; font-style: italic; font-display: swap; }
 .deck {
   --verde: #00fa87; --verde-2: #00e175; --petroleo: #007875; --cinza-verde: #61807a;
   --preto: #000000; --branco: #ffffff; --fundo-suave: #f2f5f4; --linha: #dfe6e4;
@@ -19,7 +18,10 @@
 .slide.verde { background: var(--verde); color: var(--preto); }
 .grafismo { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .sinal { position: absolute; left: 22px; top: 22px; width: 26px; height: 30px; background: url("/marca/sinal.svg") no-repeat center / contain; }
-.assinatura { position: absolute; right: 60px; bottom: 44px; width: 220px; height: 60px; background: url("/marca/assinatura.svg") no-repeat right center / contain; }
+/* Assinatura de exceção do Grupo Salta; variação cromática conforme o fundo (brandbook, relações cromáticas). */
+.assinatura { position: absolute; right: 60px; bottom: 50px; width: 230px; height: 66px; background: url("/marca/grupo-salta-sobre-verde.svg") no-repeat right center / contain; }
+.assinatura.branca { background-image: url("/marca/grupo-salta-sobre-petroleo.svg"); }
+.tap { position: absolute; left: 60px; top: 56px; width: 110px; height: 99px; background: url("/marca/tap-verde.svg") no-repeat left top / contain; }
 .numero { position: absolute; right: 30px; top: 30px; font-size: 13px; font-weight: 700; color: var(--verde-2); z-index: 2; }
 .escuro + .numero { color: var(--verde); }
 .verde + .numero { color: var(--preto); }

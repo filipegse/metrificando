@@ -1,8 +1,9 @@
 # Arquivos de marca
 
-Coloque aqui os arquivos oficiais do Grupo Salta (SVG, fundo transparente):
+- `grupo-salta.svg` — assinatura de exceção do Grupo Salta (original: sinal verde, texto preto).
+- `grupo-salta-sobre-verde.svg` — derivada: sinal em petróleo (#007875) para fundo verde #00fa87.
+- `grupo-salta-sobre-petroleo.svg` — derivada: texto branco para fundo petróleo.
+- `sinal.svg` — só o monograma, extraído da assinatura (canto dos slides claros).
+- `tap-verde.svg` — marca da TAP (capas dos times).
 
-- `sinal.svg` — monograma verde (canto superior esquerdo dos slides claros).
-- `assinatura.svg` — assinatura horizontal preferencial, versão preta para fundo verde (capa e encerramento).
-
-Enquanto os arquivos não existirem, os espaços ficam vazios (não há logo desenhado à mão).
+As variações seguem a tabela de relações cromáticas do brandbook. Não editar o desenho.

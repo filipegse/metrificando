@@ -45,7 +45,7 @@ function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string;
 /** Grafismos Movimento do brandbook: retângulos inclinados em progressão. */
 function Grafismo({ tipo }: { tipo: "linhas" | "blocos" }) {
   if (tipo === "linhas") {
-    const linhas = [[150, 0, 90, 300], [300, 0, 250, 220], [470, 0, 420, 160], [590, 0, 555, 90], [1240, 40, 1270, 720], [1190, 290, 1200, 720], [1150, 500, 1135, 720], [1020, 640, 990, 720]];
+    const linhas = [[150, 0, 90, 300], [300, 0, 250, 220], [470, 0, 420, 160], [590, 0, 555, 90], [1240, 40, 1262, 540], [1190, 290, 1196, 560]];
     return (
       <svg className="grafismo" viewBox="0 0 1280 720" aria-hidden>
         {linhas.map(([x1, y1, x2, y2], i) => <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={9} />)}
@@ -87,6 +87,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const capa = (
     <Slide escuro key="capa" demo={d.demo}>
       <Grafismo tipo="blocos" />
+      <span className="tap" aria-label="TAP" />
+      <span className="assinatura branca" aria-label="Grupo Salta" />
       <div className="capa">
         <div className="sub-capa">Área TAP · {d.rotulo}</div>
         <h1>{t.perfil.time}</h1>
