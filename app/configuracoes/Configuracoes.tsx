@@ -35,6 +35,8 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
   const [aus, setAus] = useState<Ausencia[]>([]);
   const [msg, setMsg] = useState("");
   const [timeForm, setTimeForm] = useState(times[0]?.time ?? "");
+  const [anoFeriados, setAnoFeriados] = useState(new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0));
+  const [anoFiltro, setAnoFiltro] = useState<string>(String(new Date().getFullYear()));
 
   const recarregar = useCallback(async () => {
     try {
@@ -135,11 +137,23 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
             <input name="nome" placeholder="Nome" required />
             <select name="abrangencia">{Object.entries(ABRANGENCIAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
             <button className="botao">Adicionar</button>
-            <button type="button" className="link" onClick={executar(() => api("feriados", "POST", { carregar: "2026" }), "Calendário 2026 carregado.")}>Carregar calendário 2026 da TAP</button>
           </form>
+          <div className="linha-form">
+            <label>Ano <input type="number" min={2000} max={2100} value={anoFeriados} onChange={(e) => setAnoFeriados(Number(e.target.value))} /></label>
+            <button type="button" className="botao" onClick={executar(() => api("feriados", "POST", { carregar: anoFeriados }), `Calendário ${anoFeriados} carregado.`)}>
+              Carregar calendário padrão de {anoFeriados}
+            </button>
+            <span className="sub">Nacionais, Rio e folgas da TAP, com Carnaval, Paixão e Corpus Christi calculados pela Páscoa. Datas já cadastradas não são alteradas. Festa da Empresa e Encontro do setor variam: cadastre à mão.</span>
+          </div>
+          <div className="linha-form">
+            <label>Mostrar <select value={anoFiltro} onChange={(e) => setAnoFiltro(e.target.value)}>
+              <option value="">Todos os anos</option>
+              {[...new Set(fer.map((f) => f.data.slice(0, 4)))].sort().map((a) => <option key={a}>{a}</option>)}
+            </select></label>
+          </div>
           <table>
             <thead><tr><th>Data</th><th>Nome</th><th>Abrangência</th><th /></tr></thead>
-            <tbody>{fer.map((f) => (
+            <tbody>{fer.filter((f) => !anoFiltro || f.data.startsWith(anoFiltro)).map((f) => (
               <tr key={f.data}><td>{dataBR(f.data)}</td><td>{f.nome}</td><td>{ABRANGENCIAS[f.abrangencia] ?? f.abrangencia}</td>
                 <td className="acoes-linha"><button type="button" className="link perigo" onClick={executar(() => api("feriados", "DELETE", undefined, f.data), "Feriado apagado.")}>apagar</button></td></tr>
             ))}</tbody>

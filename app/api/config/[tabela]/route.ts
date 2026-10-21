@@ -1,6 +1,6 @@
 // CRUD simples das configurações: expedientes, feriados, pessoas, alocações e ausências.
 import { db } from "@/lib/db";
-import { FERIADOS_2026 } from "@/config/feriados-2026";
+import { feriadosDoAno } from "@/config/feriados";
 
 type Ctx = { params: Promise<{ tabela: string }> };
 const erro = (msg: string, status = 400) => Response.json({ erro: msg }, { status });
@@ -33,8 +33,11 @@ export async function POST(req: Request, { params }: Ctx) {
       await sql`insert into expedientes values (${b.valido_de}, ${b.inicio}, ${b.fim}) on conflict (valido_de) do update set inicio = excluded.inicio, fim = excluded.fim`;
       break;
     case "feriados":
-      if (b.carregar === "2026") {
-        await sql.transaction(FERIADOS_2026.map(([d, n, a]) => sql`insert into feriados values (${d}, ${n}, ${a}) on conflict do nothing`));
+      if (b.carregar) {
+        // Calendário padrão do ano; não sobrescreve datas já cadastradas (ajustes manuais são preservados).
+        const ano = Number(b.carregar);
+        if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) return erro("ano inválido");
+        await sql.transaction(feriadosDoAno(ano).map(([d, n, a]) => sql`insert into feriados values (${d}, ${n}, ${a}) on conflict do nothing`));
         break;
       }
       if (!b.data || !b.nome || !b.abrangencia) return erro("informe data, nome e abrangência");
