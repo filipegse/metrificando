@@ -6,6 +6,10 @@ import { db } from "../../src/lib/db";
 import { listarHealthChecks, periodoDoHealthCheck, saudeDe } from "../../src/lib/teamretro";
 
 export default async () => {
+  if (!process.env.TEAMRETRO_API_KEY) {
+    console.log("TEAMRETRO_API_KEY ausente: coleta do TeamRetro pulada.");
+    return;
+  }
   const sql = db();
   const ate = new Date();
   const de = new Date(ate.getTime() - 30 * 24 * 60 * 60 * 1000);
