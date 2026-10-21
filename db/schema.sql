@@ -173,3 +173,20 @@ create table if not exists ausencias (
 -- Tempo útil (horas) ao lado dos dias úteis.
 alter table itens_delivery add column if not exists cycle_time_horas numeric;
 alter table itens_suporte add column if not exists tempo_resolucao_horas numeric;
+
+-- Auditoria do histórico: toda importação, edição, exclusão e reversão guarda o antes e o depois.
+create table if not exists historico_auditoria (
+  id            bigserial primary key,
+  quando        timestamptz not null default now(),
+  usuario       text not null,
+  acao          text not null check (acao in ('importacao', 'edicao', 'exclusao', 'reversao')),
+  time          text not null,
+  frente        text not null default '',
+  nome          text not null,
+  antes         jsonb,            -- null = a linha não existia
+  depois        jsonb,            -- null = a linha foi apagada
+  revertida_em  timestamptz,
+  revertida_por text,
+  reverte_id    bigint references historico_auditoria (id)
+);
+create index if not exists historico_auditoria_time on historico_auditoria (time, quando desc);

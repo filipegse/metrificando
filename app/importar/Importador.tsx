@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { lerUsuario } from "../dados/usuario";
 import { CAMPOS, lerCsv, montarLinhas, normalizar, sugerirMapa, type Campo } from "@/lib/importacao";
 
 const FONTES = {
@@ -65,12 +66,12 @@ export function Importador() {
     for (let i = 0; i < resultado.linhas.length; i += lote) {
       const r = await fetch("/api/historico", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ fonte, linhaTitulo, mapa, cabecalho, linhas: resultado.linhas.slice(i, i + lote) }),
+        body: JSON.stringify({ fonte, linhaTitulo, mapa, cabecalho, linhas: resultado.linhas.slice(i, i + lote), usuario: lerUsuario() }),
       });
       if (!r.ok) { setEstado(`erro ao gravar: ${await r.text()}`); return; }
       total += (await r.json()).gravadas;
     }
-    setEstado(`${total} período(s) importado(s).`);
+    setEstado(`${total} período(s) importado(s). Confira e corrija em Dados históricos.`);
   }
 
   const fmt = (v: unknown) => (v == null ? "—" : typeof v === "number" ? String(Math.round(v * 1000) / 1000).replace(".", ",") : String(v));

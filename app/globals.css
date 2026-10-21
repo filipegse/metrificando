@@ -65,3 +65,22 @@ tr.encerrada td { color: var(--muted); }
 .alternador { display: flex; flex-wrap: wrap; gap: 6px; }
 .alternador input { accent-color: var(--petroleo); }
 p.sub a { color: var(--petroleo); font-weight: 700; }
+main.largo { max-width: 1400px; }
+.editor { display: grid; gap: 16px; }
+.editor h2 { font-size: 1.1rem; margin: 0 0 4px; }
+.filtros { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; }
+.filtros label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.filtros select, .filtros input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
+.filtros input.obrigatorio { border-color: #c74f24; }
+table.editavel td { padding: 2px; }
+table.editavel input, table.editavel select { font: inherit; font-size: .85rem; width: 100%; min-width: 64px; padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--fg); }
+table.editavel input:hover, table.editavel input:focus, table.editavel select:hover { border-color: var(--line); background: var(--card); }
+table.editavel input.c-texto { min-width: 170px; } table.editavel input.c-data { min-width: 130px; }
+table.editavel input.c-numero, table.editavel input.c-fracao { text-align: right; }
+table.editavel td.alterada input, table.editavel td.alterada select { border-color: var(--verde-2); background: color-mix(in srgb, var(--verde) 14%, transparent); }
+table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
+.botao.pequeno { padding: 5px 10px; font-size: .85rem; }
+.mudancas { font-size: .85rem; } .mudancas div { white-space: nowrap; }
+td.vazio { color: var(--muted); text-align: center; padding: 16px; }
+table.editavel td.frente { white-space: nowrap; padding-right: 8px; }
+table.editavel select { min-width: 92px; }

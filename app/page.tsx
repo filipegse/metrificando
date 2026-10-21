@@ -64,7 +64,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<R
   return (
     <main>
       <h1>Métricas da TAP</h1>
-      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync. · <a href="/importar">Importar histórico</a> · <a href="/configuracoes">Configurações</a></p>
+      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync. · <a href="/importar">Importar histórico</a> · <a href="/dados">Dados históricos</a> · <a href="/configuracoes">Configurações</a></p>
       <Seletor inicial={inicial} trimestres={ultimosTrimestres(4)} cartoes={PERFIS.map((perfil) => {
         const r = resumos.find((x) => x.time === perfil.time);
         return {
