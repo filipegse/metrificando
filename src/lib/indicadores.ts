@@ -23,13 +23,18 @@ export type Indicadores = {
   porPlanejamento: Record<string, number>;
   porTipo: Record<string, number>;
   porRoadmap: Record<string, number>;
-  chamados: number;
-  chamadosN3: number;
-  trabalhoN3: number;
+  /** null quando o período veio do histórico das planilhas, que não tem suporte. */
+  chamados: number | null;
+  chamadosN3: number | null;
+  trabalhoN3: number | null;
   resolucaoP50: number | null;
   /** Health check do TeamRetro (fração 0–1). */
   produtividade: number | null;
   motivacao: number | null;
+  /** Só no histórico das planilhas (a coleta do Jira não calcula). */
+  esforcoSdd?: number | null;
+  ganhoSdd?: number | null;
+  historico?: boolean;
 };
 
 export type Semaforo = "bom" | "atencao" | "ruim" | "neutro";
@@ -123,4 +128,29 @@ export function saudeDoPeriodo(linhas: LinhaSaude[]): { produtividade: number | 
     return peso ? validas.reduce((s, l) => s + l[campo]! * l.respostas, 0) / peso : null;
   };
   return { produtividade: media("produtividade"), motivacao: media("motivacao") };
+}
+
+/** Ganho SDD: ≥ 19,5% bom, 5–19,4% atenção, < 5% ruim (faixas da Sync). */
+export function corGanho(v: number | null | undefined): Semaforo {
+  if (v == null) return "neutro";
+  return v >= 0.195 ? "bom" : v >= 0.05 ? "atencao" : "ruim";
+}
+
+export type LinhaHistoricoDeck = {
+  nome: string; frente: string; tipo: string; inicio: string | null; fim: string;
+  entrega: number | null; extras: number | null; pts_sdd: number | null; esforco_sdd: number | null; pts_sem_sdd: number | null;
+  ganho_sdd: number | null; itens_entregues: number | null; cycle_p50: number | null; cycle_p85: number | null;
+  produtividade: number | null; motivacao: number | null;
+};
+
+export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
+  return {
+    periodo: { periodo_id: `h:${h.nome}`, nome: h.nome, tipo: h.tipo, inicio: h.inicio ?? h.fim, fim: h.fim, frente: h.frente },
+    entrega: h.entrega, extras: h.extras, ptsSdd: h.pts_sdd ?? 0, ptsSemSdd: h.pts_sem_sdd ?? 0,
+    itensEntregues: h.itens_entregues ?? 0, cycleP50: h.cycle_p50, cycleP85: h.cycle_p85,
+    porPlanejamento: {}, porTipo: {}, porRoadmap: {},
+    chamados: null, chamadosN3: null, trabalhoN3: null, resolucaoP50: null,
+    produtividade: h.produtividade, motivacao: h.motivacao,
+    esforcoSdd: h.esforco_sdd, ganhoSdd: h.ganho_sdd, historico: true,
+  };
 }

@@ -2,8 +2,8 @@
 // /apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC  (demo=1 usa dados fictícios)
 import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
-import { carregarDeck, chaveLeitura, deckDemo, nomeDoTime, recortesDaUrl, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
-import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
+import { carregarDeck, chaveLeitura, deckDemo, metodologiaDe, nomeDoTime, recortesDaUrl, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
+import { corEntrega, corExtras, corGanho, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
 import { urlBanco } from "@/lib/db";
 import { numeroDe } from "@/lib/teamretro";
 import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
@@ -81,7 +81,7 @@ function Slide({ children, escuro, rodape, demo, pedagogico }: { children: React
 
 function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const ps = t.periodos;
-  const scrum = t.perfil.metodologia === "scrum";
+  const scrum = metodologiaDe(t) === "scrum";
   const unidade = scrum ? "Sprints" : "Semanas (sáb–sex)";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
@@ -122,9 +122,11 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     ] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Pontos COM SDD", (p) => <span className={`s-${corPontos(p.ptsSdd, medianaPts)}`}>{num(p.ptsSdd)}</span>],
     ["Pontos SEM SDD", (p) => num(p.ptsSemSdd)],
+    ...(ps.some((p) => p.esforcoSdd != null) ? [["Pontos de esforço COM SDD", (p: Indicadores) => num(p.esforcoSdd ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
+    ...(ps.some((p) => p.ganhoSdd != null) ? [["Ganho SDD", (p: Indicadores) => <span className={`s-${corGanho(p.ganhoSdd)}`}>{pct(p.ganhoSdd ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Itens entregues", (p) => p.itensEntregues],
     ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
-    ["Chamados resolvidos (N3)", (p) => `${p.chamados} (${p.chamadosN3})`],
+    ["Chamados resolvidos (N3)", (p) => (p.chamados == null ? "—" : `${p.chamados} (${p.chamadosN3})`)],
     ...(t.perfil.teamRetroId ? [
       ["Produtividade", (p: Indicadores) => <span className={`s-${corSaude(p.produtividade)}`}>{pct(p.produtividade)}</span>],
       ["Motivação", (p: Indicadores) => <span className={`s-${corSaude(p.motivacao)}`}>{pct(p.motivacao)}</span>],
@@ -219,7 +221,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <Cabecalho t={t} eyebrow="SUPORTE" titulo="Chamados resolvidos" sub={`Por nível · ${t.perfil.suporte.filter((f) => f.papel === "chamado").map((f) => f.projeto).join(", ")}`} />
       <div className="grafico metade"><h3>Chamados por nível</h3>
         <Barras largura={560} rotulos={rot} series={[
-          { nome: "N2", valores: ps.map((p) => p.chamados - p.chamadosN3) },
+          { nome: "N2", valores: ps.map((p) => (p.chamados == null ? null : p.chamados - (p.chamadosN3 ?? 0))) },
           { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#007875" },
           ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#61807a" }] : []),
         ]} />
@@ -238,7 +240,13 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       </div>
     </Slide>,
   );
-  return slides;
+  // Períodos só do histórico não têm composição nem suporte: slides sem nenhum dado saem do deck.
+  const vazio = (campo: "porPlanejamento" | "porTipo" | "porRoadmap") => ps.every((p) => !Object.keys(p[campo]).length);
+  const sem: Record<string, boolean> = {
+    "comp-plan": vazio("porPlanejamento"), "comp-tipo": vazio("porTipo"), roadmap: vazio("porRoadmap"),
+    suporte: ps.every((p) => p.chamados == null), cycle: ps.every((p) => p.cycleP50 == null),
+  };
+  return slides.filter((el) => !sem[String(el.key)]);
 }
 
 export default async function Apresentacao({ searchParams }: { searchParams: Busca }) {

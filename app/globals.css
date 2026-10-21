@@ -37,3 +37,15 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .datas { display: flex; flex-wrap: wrap; gap: 10px 16px; }
 .datas input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
 .recorte .vazio { margin: 0; color: var(--muted); }
+.voltar { margin: 0 0 8px; } .voltar a { color: var(--petroleo); font-weight: 700; text-decoration: none; }
+.importador { display: grid; gap: 16px; }
+.importador h2 { font-size: 1.1rem; margin: 0 0 4px; }
+.campos-form, .mapa { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 16px; }
+.campos-form label, .mapa label { display: grid; gap: 4px; font-size: .9rem; font-weight: 600; }
+.campos-form select, .campos-form input, .mapa select { font: inherit; font-weight: 400; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); min-width: 0; }
+.mapa label.faltando select { border-style: dashed; color: var(--muted); }
+.tabela-rolagem { overflow-x: auto; }
+.tabela-rolagem th { font-size: .75rem; white-space: nowrap; }
+.acoes { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+button.botao { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
+button.botao:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }

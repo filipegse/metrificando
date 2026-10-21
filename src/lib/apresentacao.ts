@@ -1,11 +1,29 @@
 import { PERFIS, type Perfil } from "../config/perfis";
 import { db } from "./db";
-import { indicadores, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
+import { indicadores, indicadoresDoHistorico, type LinhaHistoricoDeck, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
 
 /** `frente` preenchida quando o time é apresentado por frente (cada uma com sprints próprias). */
-export type DadosTime = { perfil: Perfil; frente?: string; periodos: Indicadores[] };
+/** `fase` preenchida quando o recorte mistura a fase Scrum e a fase Kanban do mesmo time. */
+export type DadosTime = { perfil: Perfil; frente?: string; fase?: "scrum" | "kanban"; periodos: Indicadores[] };
 
-export const nomeDoTime = (t: DadosTime) => (t.frente && t.frente !== t.perfil.time ? `${t.perfil.time} · ${t.frente}` : t.perfil.time);
+export const nomeDoTime = (t: DadosTime) =>
+  [t.perfil.time, t.frente && t.frente !== t.perfil.time ? t.frente : null, t.fase ? (t.fase === "scrum" ? "Scrum" : "Kanban") : null]
+    .filter(Boolean).join(" · ");
+
+/** Metodologia que vale para os slides deste bloco. */
+export const metodologiaDe = (t: DadosTime) => t.fase ?? t.perfil.metodologia;
+
+const numeroSprint = (nome?: string | null) => nome?.match(/\d{2,}/)?.[0];
+
+/** Histórico só entra onde a coleta do Jira não tem o mesmo período (sprint de mesmo número/frente ou semana com mesmo fim). */
+export function semDuplicar(coletados: Indicadores[], historico: Indicadores[]): Indicadores[] {
+  const dia = 86400000;
+  return historico.filter((h) => !coletados.some((c) =>
+    (c.periodo.frente ?? "") === (h.periodo.frente ?? "") && c.periodo.tipo === h.periodo.tipo &&
+    (h.periodo.tipo === "sprint"
+      ? numeroSprint(c.periodo.nome) === numeroSprint(h.periodo.nome)
+      : Math.abs(Date.parse(c.periodo.fim) - Date.parse(h.periodo.fim)) < 3 * dia)));
+}
 export type DadosDeck = { deck: string; rotulo: string; times: DadosTime[]; leituras: Record<string, string>; demo: boolean };
 
 /** "2026-Q4" → intervalo do trimestre. */
@@ -73,12 +91,26 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
     const saude = (await sql`
       select periodo_id, frente, produtividade::float, motivacao::float, respostas
       from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
-    const todos = periodos.map((p) => indicadores(p, delivery, suporte, saude));
-    if (perfil.sprintsPorFrente) {
-      for (const { frente } of perfil.sprintsPorFrente) {
-        times.push({ perfil, frente, periodos: todos.filter((i) => i.periodo.frente === frente) });
-      }
-    } else times.push({ perfil, periodos: todos });
+    const coletados = periodos.map((p) => indicadores(p, delivery, suporte, saude));
+    const linhasHist = (r.sprints
+      ? await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
+            pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
+          from historico_periodos where time = ${perfil.time} and ('h:' || nome) = any(${r.sprints})`
+      : await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
+            pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
+          from historico_periodos where time = ${perfil.time} and fim >= ${de.slice(0, 10)}::date and fim < ${ate.slice(0, 10)}::date`) as LinhaHistoricoDeck[];
+    // Frentes de Nexus/Eficientes no histórico Kanban são linhas próprias; no deck o time aparece inteiro, então só entram linhas do time.
+    const historico = semDuplicar(coletados, linhasHist.filter((h) => !h.frente || perfil.sprintsPorFrente).map(indicadoresDoHistorico));
+    const todos = [...coletados, ...historico].sort((a, b) => Date.parse(a.periodo.fim) - Date.parse(b.periodo.fim));
+    for (const frente of perfil.sprintsPorFrente?.map((f) => f.frente) ?? [undefined]) {
+      const daFrente = frente ? todos.filter((i) => i.periodo.frente === frente) : todos;
+      const sprints = daFrente.filter((i) => i.periodo.tipo === "sprint"), semanas = daFrente.filter((i) => i.periodo.tipo === "semana");
+      // Recorte que atravessa a migração Scrum → Kanban: um bloco por fase, sem misturar sprint com semana.
+      if (sprints.length && semanas.length) {
+        times.push({ perfil, frente, fase: "scrum", periodos: sprints });
+        times.push({ perfil, frente, fase: "kanban", periodos: semanas });
+      } else times.push({ perfil, frente, periodos: daFrente });
+    }
   }
   const leituras: Record<string, string> = {};
   for (const l of (await sql`select time, slide, texto from leituras where deck = ${deck}`) as { time: string; slide: string; texto: string }[]) {

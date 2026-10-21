@@ -27,9 +27,12 @@ type PeriodoDisponivel = { time: string; periodo_id: string; nome: string | null
 /** Sprints coletadas de cada time, da mais recente para a mais antiga. */
 async function sprintsDisponiveis(): Promise<PeriodoDisponivel[]> {
   if (!urlBanco()) return [];
+  // Sprints coletadas do Jira e sprints do histórico importado (id "h:<nome>").
   return (await db()`
-    select time, periodo_id, nome, frente, fim::text from periodos
-    where tipo = 'sprint' order by fim desc limit 600`) as PeriodoDisponivel[];
+    select time, periodo_id, nome, frente, fim::text from periodos where tipo = 'sprint'
+    union all
+    select h.time, 'h:' || h.nome, h.nome, h.frente, h.fim::text from historico_periodos h where h.tipo = 'sprint'
+    order by fim desc limit 1000`) as PeriodoDisponivel[];
 }
 
 async function carregar(): Promise<Resumo[]> {
@@ -60,7 +63,7 @@ export default async function Pagina() {
   return (
     <main>
       <h1>Métricas da TAP</h1>
-      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync.</p>
+      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync. · <a href="/importar">Importar histórico</a></p>
       <Seletor trimestres={ultimosTrimestres(4)} cartoes={PERFIS.map((perfil) => {
         const r = resumos.find((x) => x.time === perfil.time);
         return {

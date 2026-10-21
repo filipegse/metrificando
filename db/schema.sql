@@ -98,3 +98,37 @@ create table if not exists saude_time (
 alter table saude_time add column if not exists frente text not null default '';
 alter table saude_time drop constraint if exists saude_time_pkey;
 create unique index if not exists saude_time_chave on saude_time (time, periodo_id, frente);
+
+-- Histórico importado das planilhas (valores agregados por sprint/ciclo, como foram fechados).
+-- A coleta do Jira tem prioridade: o deck só usa o histórico em períodos sem coleta.
+create table if not exists historico_periodos (
+  time               text not null,
+  frente             text not null default '',
+  nome               text not null,
+  tipo               text not null check (tipo in ('sprint', 'semana')),
+  inicio             date,
+  fim                date not null,
+  fonte              text not null,          -- 'dados_sprints' | 'kanban' | 'outra'
+  entrega            numeric,                -- fração 0–1
+  extras             numeric,                -- fração 0–1
+  pts_sdd            numeric,                -- CC: pontos concluídos COM SDD
+  esforco_sdd        numeric,                -- CD: pontos de esforço COM SDD
+  pts_sem_sdd        numeric,                -- CJ: pontos concluídos SEM SDD
+  esforco_sem_sdd    numeric,                -- CK
+  ganho_sdd          numeric,                -- CL: fração 0–1
+  itens_entregues    numeric,
+  cycle_p50          numeric,
+  cycle_p85          numeric,
+  produtividade      numeric,                -- fração 0–1
+  motivacao          numeric,                -- fração 0–1
+  importado_em       timestamptz not null default now()
+);
+create unique index if not exists historico_chave on historico_periodos (time, frente, nome);
+
+-- Mapeamento de colunas confirmado na última importação de cada tipo de planilha.
+create table if not exists import_mapeamentos (
+  fonte         text primary key,
+  mapa          jsonb not null,
+  linha_titulo  int not null,
+  atualizado_em timestamptz not null default now()
+);

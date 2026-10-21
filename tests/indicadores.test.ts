@@ -67,3 +67,21 @@ describe("recortes da URL", async () => {
     });
   });
 });
+
+describe("histórico das planilhas", async () => {
+  const { semDuplicar } = await import("../src/lib/apresentacao");
+  const { indicadoresDoHistorico, indicadores: ind } = await import("../src/lib/indicadores");
+  const hist = (nome: string, fim: string, tipo = "sprint", frente = "") => indicadoresDoHistorico({
+    nome, frente, tipo, inicio: null, fim, entrega: 1, extras: 0, pts_sdd: 30, esforco_sdd: 32, pts_sem_sdd: 40, ganho_sdd: 0.25,
+    itens_entregues: 10, cycle_p50: null, cycle_p85: null, produtividade: 0.9, motivacao: 0.9,
+  });
+  const coletado = ind({ periodo_id: "999", nome: "DSR 70", tipo: "sprint", inicio: "2026-10-01", fim: "2026-10-14", frente: "" }, [], []);
+
+  it("coleta do Jira tem prioridade sobre o histórico do mesmo período", () => {
+    const r = semDuplicar([coletado], [hist("DSR 70 1ª.Q4.26", "2026-10-14"), hist("DSR 69 6ª.Q3.26", "2026-09-30")]);
+    expect(r.map((x) => x.periodo.nome)).toEqual(["DSR 69 6ª.Q3.26"]);
+  });
+  it("período do histórico não tem suporte (fica vazio, não zero)", () => {
+    expect(hist("DSR 69", "2026-09-30").chamados).toBeNull();
+  });
+});
