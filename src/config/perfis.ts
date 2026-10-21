@@ -90,14 +90,14 @@ export const PERFIS: Perfil[] = [
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],
   },
   {
-    time: "TRG", projeto: "TRG", metodologia: "scrum", periodo: "sprint",
+    time: "Retaguarda", projeto: "TRG", metodologia: "scrum", periodo: "sprint",
     campoFrente: { id: "components", nome: "Components" },
     mapaDelivery: S.DELIVERY_TRG, tiposDelivery: ["História", "Tecnologia"],
     // Suporte entra na sprint, mas não soma pontos nem conta como item entregue.
     suporte: [{ projeto: "TRG", porTipo: true, mapa: S.DELIVERY_TRG, statusResolucao: "Concluído", papel: "chamado", naSprint: true }],
   },
   {
-    time: "CF", projeto: "CF", metodologia: "scrum", periodo: "sprint",
+    time: "Contas a Pagar", projeto: "CF", metodologia: "scrum", periodo: "sprint",
     campoFrente: null, mapaDelivery: S.DELIVERY_CF, tiposDelivery: ["História", "Correção", "Tecnologia"],
     // Suporte fica fora da sprint e tem workflow próprio.
     suporte: [{ projeto: "CF", porTipo: true, mapa: S.SUPORTE_CF, statusResolucao: "Resolvido", papel: "chamado", naSprint: false }],

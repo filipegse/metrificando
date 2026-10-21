@@ -1,6 +1,18 @@
 // Visão consolidada por time — último período coletado. Sem dimensão de pessoa (princípio de métricas da TAP).
 import { PERFIS } from "@/config/perfis";
 import { db, urlBanco } from "@/lib/db";
+import { Seletor } from "./Seletor";
+
+/** Trimestre atual e os anteriores, no formato AAAA-QN. */
+function ultimosTrimestres(n: number): string[] {
+  const agora = new Date();
+  let ano = agora.getUTCFullYear(), q = Math.floor(agora.getUTCMonth() / 3) + 1;
+  return Array.from({ length: n }, () => {
+    const t = `${ano}-Q${q}`;
+    if (--q === 0) { q = 4; ano--; }
+    return t;
+  });
+}
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +50,14 @@ export default async function Pagina() {
   return (
     <main>
       <h1>Métricas da TAP</h1>
-      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. · <a href="/apresentacao">Modo apresentação</a></p>
-      <div className="grid">
-        {PERFIS.map((perfil) => {
-          const r = resumos.find((x) => x.time === perfil.time);
-          return (
-            <section className="card" key={perfil.time}>
+      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync.</p>
+      <Seletor trimestres={ultimosTrimestres(4)} cartoes={PERFIS.map((perfil) => {
+        const r = resumos.find((x) => x.time === perfil.time);
+        return {
+          projeto: perfil.projeto,
+          time: perfil.time,
+          conteudo: (
+            <>
               <h2>{perfil.time}</h2>
               <div className="meta">
                 {perfil.metodologia === "scrum" ? "Scrum" : "Kanban"} ·{" "}
@@ -61,10 +75,10 @@ export default async function Pagina() {
                   </tbody>
                 </table>
               )}
-            </section>
-          );
-        })}
-      </div>
+            </>
+          ),
+        };
+      })} />
     </main>
   );
 }
