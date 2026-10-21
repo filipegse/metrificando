@@ -14,7 +14,7 @@ p.sub { color: var(--muted); margin: 0 0 20px; }
 button.link { font: inherit; background: none; border: 0; color: var(--petroleo); font-weight: 700; cursor: pointer; padding: 0; }
 .botao { background: #000; color: var(--verde); font-weight: 700; text-decoration: none; padding: 10px 16px; border-radius: 999px; white-space: nowrap; }
 .botao.desativado { background: var(--line); color: var(--muted); cursor: not-allowed; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
 .card { position: relative; background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 16px; }
 .card.selecionavel { cursor: pointer; transition: border-color .15s; }
 .card.selecionavel:hover { border-color: var(--verde-2); }
@@ -28,14 +28,12 @@ table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 td, th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .barra .opcao { display: flex; align-items: center; gap: 6px; font-size: .95rem; cursor: pointer; }
-.recortes { display: grid; gap: 12px; margin-bottom: 16px; }
-.recorte { margin: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 10px 14px 14px; }
-.recorte legend { font-weight: 700; padding: 0 6px; }
-.recorte legend span { font-weight: 400; color: var(--muted); }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.recorte { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); cursor: default; }
+.recorte-titulo { font-size: .85rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 180px; overflow-y: auto; }
 .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: .9rem; cursor: pointer; }
 .chip input { accent-color: var(--petroleo); }
 .chip.ativo { border-color: var(--verde-2); background: color-mix(in srgb, var(--verde) 18%, transparent); }
-.datas { display: flex; flex-wrap: wrap; gap: 16px; }
+.datas { display: flex; flex-wrap: wrap; gap: 10px 16px; }
 .datas input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
 .recorte .vazio { margin: 0; color: var(--muted); }

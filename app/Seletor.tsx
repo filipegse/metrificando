@@ -76,39 +76,6 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
         </a>
       </div>
 
-      {personalizar && selecionados.length > 0 && (
-        <div className="recortes">
-          {selecionados.map((c) => {
-            const r = recortes[c.projeto];
-            if (!r) return null;
-            return (
-              <fieldset key={c.projeto} className="recorte">
-                <legend>{c.time} <span>· {c.metodologia === "scrum" ? "sprints" : "período (semanas sáb–sex)"}</span></legend>
-                {c.metodologia === "scrum" ? (
-                  c.sprints.length ? (
-                    <div className="chips">
-                      {c.sprints.map((s) => (
-                        <label key={s.id} className={`chip ${r.sprints.has(s.id) ? "ativo" : ""}`}>
-                          <input type="checkbox" checked={r.sprints.has(s.id)} onChange={() => atualizar(c.projeto, (x) => {
-                            const n = new Set(x.sprints); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return { ...x, sprints: n };
-                          })} />
-                          {s.nome}
-                        </label>
-                      ))}
-                    </div>
-                  ) : <p className="vazio">Nenhuma sprint coletada ainda.</p>
-                ) : (
-                  <div className="datas">
-                    <label>De <input type="date" value={r.de} onChange={(e) => atualizar(c.projeto, (x) => ({ ...x, de: e.target.value }))} /></label>
-                    <label>Até <input type="date" value={r.ate} min={r.de} onChange={(e) => atualizar(c.projeto, (x) => ({ ...x, ate: e.target.value }))} /></label>
-                  </div>
-                )}
-              </fieldset>
-            );
-          })}
-        </div>
-      )}
-
       <div className="grid">
         {cartoes.map((c) => {
           const ativo = marcados.has(c.projeto);
@@ -117,9 +84,44 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
               onClick={() => alternar(c.projeto)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); alternar(c.projeto); } }}>
               <span className="marcador" aria-hidden>{ativo ? "✓" : ""}</span>
               {c.conteudo}
+              {ativo && personalizar && recortes[c.projeto] && (
+                // Cliques e teclas dentro do recorte não alternam a seleção do cartão.
+                <div className="recorte" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <RecorteDoTime cartao={c} recorte={recortes[c.projeto]} mudar={(f) => atualizar(c.projeto, f)} />
+                </div>
+              )}
             </section>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+function RecorteDoTime({ cartao: c, recorte: r, mudar }: { cartao: Cartao; recorte: Recorte; mudar: (f: (r: Recorte) => Recorte) => void }) {
+  if (c.metodologia === "kanban") {
+    return (
+      <>
+        <div className="recorte-titulo">Período (semanas sáb–sex que fecham no intervalo)</div>
+        <div className="datas">
+          <label>De <input type="date" value={r.de} onChange={(e) => mudar((x) => ({ ...x, de: e.target.value }))} /></label>
+          <label>Até <input type="date" value={r.ate} min={r.de} onChange={(e) => mudar((x) => ({ ...x, ate: e.target.value }))} /></label>
+        </div>
+      </>
+    );
+  }
+  if (!c.sprints.length) return <p className="vazio">Nenhuma sprint coletada ainda.</p>;
+  const alternar = (id: string) => mudar((x) => { const n = new Set(x.sprints); n.has(id) ? n.delete(id) : n.add(id); return { ...x, sprints: n }; });
+  return (
+    <>
+      <div className="recorte-titulo">Sprints ({r.sprints.size} de {c.sprints.length})</div>
+      <div className="chips">
+        {c.sprints.map((s) => (
+          <label key={s.id} className={`chip ${r.sprints.has(s.id) ? "ativo" : ""}`}>
+            <input type="checkbox" checked={r.sprints.has(s.id)} onChange={() => alternar(s.id)} />
+            {s.nome}
+          </label>
+        ))}
       </div>
     </>
   );
