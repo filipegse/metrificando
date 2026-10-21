@@ -1,8 +1,10 @@
 import { CAMPOS, TIPO_CANONICO, TIPO_SUPORTE, TIPOS_EXCLUIDOS, type FonteSuporte, type Perfil } from "../config/perfis";
 import { etapa, ETAPAS_ENTREGUE, STATUS_N3 } from "../config/status";
 import { transicoes, type IssueJira } from "./jira";
+import { tempoUtil, type Calendario } from "./calendario";
 
-const DIA_MS = 24 * 60 * 60 * 1000;
+const CALENDARIO_VAZIO: Calendario = { expedientes: [], feriados: new Set() };
+
 
 export type ItemDelivery = {
   chave: string;
@@ -18,7 +20,9 @@ export type ItemDelivery = {
   etapaFinal: string;
   entregue: boolean;
   entregueEm: Date | null;
+  /** Dias úteis (horas úteis ÷ jornada). */
   cycleTimeDias: number | null;
+  cycleTimeHoras: number | null;
 };
 
 export type ItemSuporte = {
@@ -32,6 +36,7 @@ export type ItemSuporte = {
   criadoEm: Date;
   resolvidoEm: Date;
   tempoResolucaoDias: number;
+  tempoResolucaoHoras: number;
   naSprint: boolean;
 };
 
@@ -58,26 +63,27 @@ export function ehDelivery(tipo: string, perfil: Perfil): boolean {
 }
 
 /**
- * Cycle time = da primeira saída de backlog/a_fazer até a última entrada em `entregue`.
+ * Cycle time = da primeira saída de backlog/a_fazer até a última entrada em `entregue`, em tempo útil.
  * Aceita etapas puladas (ex.: TRG vai de validação direto para Concluído).
  */
-export function cycleTime(issue: IssueJira, perfil: Perfil): { entregueEm: Date | null; dias: number | null } {
+export function cycleTime(issue: IssueJira, perfil: Perfil, cal: Calendario = CALENDARIO_VAZIO): { entregueEm: Date | null; dias: number | null; horas: number | null } {
   const ts = transicoes(issue);
   const fila = new Set(["backlog", "a_fazer", "despriorizado"]);
   const inicio = ts.find((t) => !fila.has(etapa(perfil.mapaDelivery, t.para)));
   const entregas = ts.filter((t) => ETAPAS_ENTREGUE.has(etapa(perfil.mapaDelivery, t.para)));
   const fim = entregas.at(-1);
-  if (!fim) return { entregueEm: null, dias: null };
-  if (!inicio) return { entregueEm: fim.em, dias: null };
-  return { entregueEm: fim.em, dias: Math.round(((fim.em.getTime() - inicio.em.getTime()) / DIA_MS) * 10) / 10 };
+  if (!fim) return { entregueEm: null, dias: null, horas: null };
+  if (!inicio) return { entregueEm: fim.em, dias: null, horas: null };
+  const t = tempoUtil(inicio.em, fim.em, cal);
+  return { entregueEm: fim.em, dias: t.dias, horas: t.horas };
 }
 
-export function normalizarDelivery(issue: IssueJira, perfil: Perfil): ItemDelivery | null {
+export function normalizarDelivery(issue: IssueJira, perfil: Perfil, cal: Calendario = CALENDARIO_VAZIO): ItemDelivery | null {
   const tipo: string = issue.fields.issuetype?.name ?? "";
   if (!ehDelivery(tipo, perfil)) return null;
   const status: string = issue.fields.status?.name ?? "";
   const etapaFinal = etapa(perfil.mapaDelivery, status);
-  const { entregueEm, dias } = cycleTime(issue, perfil);
+  const { entregueEm, dias, horas } = cycleTime(issue, perfil, cal);
   return {
     chave: issue.key,
     frente: frenteDe(issue, perfil),
@@ -93,6 +99,7 @@ export function normalizarDelivery(issue: IssueJira, perfil: Perfil): ItemDelive
     entregue: ETAPAS_ENTREGUE.has(etapaFinal),
     entregueEm,
     cycleTimeDias: dias,
+    cycleTimeHoras: horas,
   };
 }
 
@@ -108,7 +115,7 @@ export function nivelDe(issue: IssueJira, fonte: FonteSuporte): "N2" | "N3" | nu
   return transicoes(issue).some((t) => t.para === STATUS_N3) ? "N3" : "N2";
 }
 
-export function normalizarSuporte(issue: IssueJira, perfil: Perfil, fonte: FonteSuporte): ItemSuporte | null {
+export function normalizarSuporte(issue: IssueJira, perfil: Perfil, fonte: FonteSuporte, cal: Calendario = CALENDARIO_VAZIO): ItemSuporte | null {
   const resolvido = resolvidoEm(issue, fonte);
   if (!resolvido) return null;
   const criado = new Date(issue.fields.created);
@@ -123,7 +130,7 @@ export function normalizarSuporte(issue: IssueJira, perfil: Perfil, fonte: Fonte
     etapaFinal: etapa(fonte.mapa, status),
     criadoEm: criado,
     resolvidoEm: resolvido,
-    tempoResolucaoDias: Math.round(((resolvido.getTime() - criado.getTime()) / DIA_MS) * 10) / 10,
+    ...(() => { const t = tempoUtil(criado, resolvido, cal); return { tempoResolucaoDias: t.dias, tempoResolucaoHoras: t.horas }; })(),
     naSprint: fonte.naSprint,
   };
 }

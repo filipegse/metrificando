@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 type Sprint = { id: string; nome: string; fim: string };
-type Cartao = { projeto: string; time: string; metodologia: "scrum" | "kanban"; sprints: Sprint[]; conteudo: ReactNode };
+type Cartao = { projeto: string; time: string; metodologia: "scrum" | "kanban"; sprints: Sprint[]; frentes: string[]; conteudo: ReactNode };
 type Recorte = { sprints: Set<string>; de: string; ate: string };
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -28,6 +28,8 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
   const [trimestre, setTrimestre] = useState(trimestres[0]);
   const [recortes, setRecortes] = useState<Record<string, Recorte>>({});
   const [personalizar, setPersonalizar] = useState(false);
+  // Times com frentes (Nexus, Eficientes): deck geral ou por frente.
+  const [porFrente, setPorFrente] = useState<Set<string>>(new Set());
 
   // Trocar o trimestre recalcula o recorte padrão de todos os times.
   useEffect(() => {
@@ -44,6 +46,7 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
 
   const destino = useMemo(() => {
     const q = new URLSearchParams({ trimestre, times: selecionados.map((c) => c.projeto).join(",") });
+    for (const c of selecionados) if (porFrente.has(c.projeto)) q.set(`f_${c.projeto}`, "frentes");
     if (personalizar) {
       for (const c of selecionados) {
         const r = recortes[c.projeto];
@@ -53,7 +56,7 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
       }
     }
     return `/apresentacao?${q.toString()}`;
-  }, [trimestre, selecionados, recortes, personalizar]);
+  }, [trimestre, selecionados, recortes, personalizar, porFrente]);
 
   return (
     <>
@@ -84,6 +87,20 @@ export function Seletor({ cartoes, trimestres }: { cartoes: Cartao[]; trimestres
               onClick={() => alternar(c.projeto)} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); alternar(c.projeto); } }}>
               <span className="marcador" aria-hidden>{ativo ? "✓" : ""}</span>
               {c.conteudo}
+              {ativo && c.frentes.length > 0 && (
+                <div className="recorte" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <div className="recorte-titulo">Apresentação</div>
+                  <div className="alternador" role="radiogroup">
+                    {[["geral", "Time inteiro"], ["frentes", `Por frente (${c.frentes.join(", ")})`]].map(([v, r]) => (
+                      <label key={v} className={`chip ${(v === "frentes") === porFrente.has(c.projeto) ? "ativo" : ""}`}>
+                        <input type="radio" name={`f_${c.projeto}`} checked={(v === "frentes") === porFrente.has(c.projeto)}
+                          onChange={() => setPorFrente((s) => { const n = new Set(s); v === "frentes" ? n.add(c.projeto) : n.delete(c.projeto); return n; })} />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               {ativo && personalizar && recortes[c.projeto] && (
                 // Cliques e teclas dentro do recorte não alternam a seleção do cartão.
                 <div className="recorte" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

@@ -1,5 +1,7 @@
 import { PERFIS, type Perfil } from "../config/perfis";
 import { db } from "./db";
+import { carregarCalendario } from "./coleta";
+import { capacidade, type AlocacaoCap, type AusenciaCap } from "./capacidade";
 import { indicadores, indicadoresDoHistorico, type LinhaHistoricoDeck, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
 
 /** `frente` preenchida quando o time é apresentado por frente (cada uma com sprints próprias). */
@@ -45,16 +47,18 @@ export function chaveLeitura(time: string, slide: string) {
 }
 
 /** Recorte escolhido na página inicial: sprints específicas (Scrum) ou intervalo de datas (Kanban). */
-export type Recorte = { sprints?: string[]; de?: string; ate?: string };
+/** `porFrente`: Nexus/Eficientes apresentados por frente em vez do time inteiro. */
+export type Recorte = { sprints?: string[]; de?: string; ate?: string; porFrente?: boolean };
 
-/** Lê `s_DSR=123,124` e `de_EFC=2026-09-01&ate_EFC=2026-10-15` da URL. */
+/** Lê `s_DSR=123,124`, `de_EFC=2026-09-01&ate_EFC=2026-10-15` e `f_NXS=frentes` da URL. */
 export function recortesDaUrl(q: Record<string, string | undefined>): Record<string, Recorte> {
   const r: Record<string, Recorte> = {};
   for (const [k, v] of Object.entries(q)) {
-    const m = /^(s|de|ate)_([A-Z0-9]+)$/.exec(k);
+    const m = /^(s|de|ate|f)_([A-Z0-9]+)$/.exec(k);
     if (!m || !v) continue;
     const alvo = (r[m[2]] ??= {});
-    if (m[1] === "s") alvo.sprints = v.split(",").filter(Boolean);
+    if (m[1] === "f") alvo.porFrente = v === "frentes";
+    else if (m[1] === "s") alvo.sprints = v.split(",").filter(Boolean);
     else alvo[m[1] as "de" | "ate"] = v;
   }
   return r;
@@ -71,6 +75,10 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
   const perfis = PERFIS.filter((p) => projetos.includes(p.projeto));
   const sql = db();
   const times: DadosTime[] = [];
+  // Calendário e alocações valem para todos os times do deck.
+  const cal = await carregarCalendario();
+  const aloc = (await sql`select pessoa_id, time, frente, cargo, percentual::float, inicio::text, fim::text from alocacoes`) as AlocacaoCap[];
+  const aus = (await sql`select pessoa_id, inicio::text, fim::text from ausencias`) as AusenciaCap[];
   for (const perfil of perfis) {
     // Sem recorte, o período entra no trimestre pela data de fim (sprint fechada / janela fechada).
     const r = recortes[perfil.projeto] ?? {};
@@ -83,15 +91,14 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
           where time = ${perfil.time} and fim >= ${de} and fim < ${ate} order by fim`) as Periodo[];
     const ids = periodos.map((p) => p.periodo_id);
     const delivery = (await sql`
-      select periodo_id, tipo_canonico, sp_sdd::float, sp_sem_sdd::float, planejamento, categoria_roadmap, entregue, cycle_time_dias::float
-      from itens_delivery where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaDelivery[];
+      select periodo_id, frente, tipo_canonico, sp_sdd::float, sp_sem_sdd::float, planejamento, categoria_roadmap, entregue, cycle_time_dias::float
+      from itens_delivery where time = ${perfil.time} and periodo_id = any(${ids})`) as (LinhaDelivery & { frente: string | null })[];
     const suporte = (await sql`
-      select periodo_id, nivel, papel, tempo_resolucao_dias::float
-      from itens_suporte where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSuporte[];
+      select periodo_id, frente, nivel, papel, tempo_resolucao_dias::float
+      from itens_suporte where time = ${perfil.time} and periodo_id = any(${ids})`) as (LinhaSuporte & { frente: string | null })[];
     const saude = (await sql`
       select periodo_id, frente, produtividade::float, motivacao::float, respostas
       from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
-    const coletados = periodos.map((p) => indicadores(p, delivery, suporte, saude));
     const linhasHist = (r.sprints
       ? await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
             pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
@@ -99,17 +106,31 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
       : await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
             pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
           from historico_periodos where time = ${perfil.time} and fim >= ${de.slice(0, 10)}::date and fim < ${ate.slice(0, 10)}::date`) as LinhaHistoricoDeck[];
-    // Frentes de Nexus/Eficientes no histórico Kanban são linhas próprias; no deck o time aparece inteiro, então só entram linhas do time.
-    const historico = semDuplicar(coletados, linhasHist.filter((h) => !h.frente || perfil.sprintsPorFrente).map(indicadoresDoHistorico));
-    const todos = [...coletados, ...historico].sort((a, b) => Date.parse(a.periodo.fim) - Date.parse(b.periodo.fim));
-    for (const frente of perfil.sprintsPorFrente?.map((f) => f.frente) ?? [undefined]) {
-      const daFrente = frente ? todos.filter((i) => i.periodo.frente === frente) : todos;
-      const sprints = daFrente.filter((i) => i.periodo.tipo === "sprint"), semanas = daFrente.filter((i) => i.periodo.tipo === "semana");
+
+    // Blocos do deck: frentes com sprints próprias (TRG), frentes escolhidas (Nexus/Eficientes) ou o time inteiro.
+    const sprintsProprias = !!perfil.sprintsPorFrente;
+    const blocos: (string | undefined)[] = sprintsProprias ? perfil.sprintsPorFrente!.map((f) => f.frente)
+      : r.porFrente && perfil.frentes?.length ? perfil.frentes : [undefined];
+    for (const frente of blocos) {
+      const daFrente = (x: { frente?: string | null }) => !frente || sprintsProprias || (x.frente ?? "").split(", ").includes(frente);
+      const doBloco = periodos.filter((p) => !sprintsProprias || !frente || p.frente === frente);
+      const coletados = doBloco.map((p) => {
+        const i = indicadores(p, delivery.filter(daFrente), suporte.filter(daFrente), saude);
+        const fim = p.fim.slice(0, 10), inicio = (p.inicio ?? p.fim).slice(0, 10);
+        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, inicio, fim) };
+      });
+      // Histórico: linha da frente quando o bloco é de frente; linha do time inteiro quando o bloco é o time.
+      const hist = linhasHist.filter((h) => (frente ? h.frente === frente : !h.frente)).map((h) => {
+        const i = indicadoresDoHistorico(h);
+        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, (h.inicio ?? h.fim).slice(0, 10), h.fim.slice(0, 10)) };
+      });
+      const todos = [...coletados, ...semDuplicar(coletados, hist)].sort((a, b) => Date.parse(a.periodo.fim) - Date.parse(b.periodo.fim));
+      const sprints = todos.filter((i) => i.periodo.tipo === "sprint"), semanas = todos.filter((i) => i.periodo.tipo === "semana");
       // Recorte que atravessa a migração Scrum → Kanban: um bloco por fase, sem misturar sprint com semana.
       if (sprints.length && semanas.length) {
         times.push({ perfil, frente, fase: "scrum", periodos: sprints });
         times.push({ perfil, frente, fase: "kanban", periodos: semanas });
-      } else times.push({ perfil, frente, periodos: daFrente });
+      } else times.push({ perfil, frente, periodos: todos });
     }
   }
   const leituras: Record<string, string> = {};
@@ -120,12 +141,12 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
 }
 
 /** Dados fictícios para visualizar o deck antes de existir coleta. */
-export function deckDemo(deck: string, projetos: string[]): DadosDeck {
+export function deckDemo(deck: string, projetos: string[], recortes: Record<string, Recorte> = {}, misto = false): DadosDeck {
   const { rotulo } = intervaloTrimestre(deck);
   let semente = 7;
   const rnd = () => ((semente = (semente * 9301 + 49297) % 233280) / 233280);
   const times = PERFIS.filter((p) => projetos.includes(p.projeto)).flatMap((perfil) =>
-    (perfil.sprintsPorFrente?.map((f) => f.frente) ?? [undefined]).map((frente) => {
+    (perfil.sprintsPorFrente?.map((f) => f.frente) ?? (recortes[perfil.projeto]?.porFrente && perfil.frentes ? perfil.frentes : [undefined])).map((frente) => {
     const scrum = perfil.metodologia === "scrum";
     const n = scrum ? 5 : 12;
     const periodos: Indicadores[] = Array.from({ length: n }, (_, k) => {
@@ -148,9 +169,18 @@ export function deckDemo(deck: string, projetos: string[]): DadosDeck {
         resolucaoP50: Math.round((1 + rnd() * 5) * 10) / 10,
         produtividade: perfil.teamRetroId ? 0.76 + rnd() * 0.22 : null,
         motivacao: perfil.teamRetroId ? 0.78 + rnd() * 0.2 : null,
+        capacidade: Math.round((frente ? 18 : 36) + rnd() * 8),
       };
     });
-    return { perfil, frente, periodos };
-  }));
+    // demo=misto: times Kanban ganham uma fase Scrum antes, para visualizar a transição.
+    if (misto && !scrum) {
+      const sprints = periodos.slice(0, 4).map((p, k) => ({ ...p, entrega: 0.8 + rnd() * 0.3, extras: 0.1 + rnd() * 0.15, itensEntregues: p.itensEntregues * 2,
+        chamados: (p.chamados ?? 0) * 2, cycleP50: (p.cycleP50 ?? 0) + 2,
+        periodo: { ...p.periodo, periodo_id: `s${k}`, tipo: "sprint", nome: `${perfil.projeto} ${40 + k}`,
+          inicio: new Date(Date.UTC(2026, 6, 1 + k * 14)).toISOString(), fim: new Date(Date.UTC(2026, 6, 14 + k * 14)).toISOString() } }));
+      return [{ perfil, frente, fase: "scrum" as const, periodos: sprints }, { perfil, frente, fase: "kanban" as const, periodos }];
+    }
+    return [{ perfil, frente, periodos }];
+  }).flat());
   return { deck, rotulo, times, leituras: {}, demo: true };
 }

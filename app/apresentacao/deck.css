@@ -83,3 +83,5 @@ table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-
   .moldura { display: block !important; transform: none !important; page-break-after: always; break-after: page; }
   .controles, .progresso, .leitura .estado { display: none; }
 }
+.quadro4 { position: absolute; left: 60px; right: 60px; top: 160px; bottom: 120px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
+.quadro4 h3 { font-size: 13px; color: var(--muted); margin: 0; font-weight: 700; }

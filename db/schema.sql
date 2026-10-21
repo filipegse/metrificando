@@ -132,3 +132,44 @@ create table if not exists import_mapeamentos (
   linha_titulo  int not null,
   atualizado_em timestamptz not null default now()
 );
+
+-- Configurações com histórico (vigência por data).
+create table if not exists expedientes (
+  valido_de  date primary key,
+  inicio     time not null,
+  fim        time not null
+);
+insert into expedientes (valido_de, inicio, fim) values ('2000-01-01', '09:00', '18:48') on conflict do nothing;
+
+create table if not exists feriados (
+  data         date primary key,
+  nome         text not null,
+  abrangencia  text not null check (abrangencia in ('nacional', 'estadual_rj', 'municipal_rj', 'evento_interno', 'folga'))
+);
+
+-- Pessoas e alocações (uma linha por período em um time/frente/cargo; troca de time = nova linha).
+create table if not exists pessoas (
+  id    bigserial primary key,
+  nome  text not null unique
+);
+create table if not exists alocacoes (
+  id          bigserial primary key,
+  pessoa_id   bigint not null references pessoas (id) on delete cascade,
+  time        text not null,
+  frente      text not null default '',
+  cargo       text not null check (cargo in ('Dev', 'TL', 'PM', 'QA', 'PD', 'Suporte técnico', 'Agilista')),
+  percentual  numeric not null default 1 check (percentual > 0 and percentual <= 1),
+  inicio      date not null,
+  fim         date            -- null = alocação vigente
+);
+create table if not exists ausencias (
+  id         bigserial primary key,
+  pessoa_id  bigint not null references pessoas (id) on delete cascade,
+  inicio     date not null,
+  fim        date not null,
+  tipo       text not null default 'Férias'
+);
+
+-- Tempo útil (horas) ao lado dos dias úteis.
+alter table itens_delivery add column if not exists cycle_time_horas numeric;
+alter table itens_suporte add column if not exists tempo_resolucao_horas numeric;

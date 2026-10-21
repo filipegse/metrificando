@@ -63,13 +63,15 @@ export default async function Pagina() {
   return (
     <main>
       <h1>Métricas da TAP</h1>
-      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync. · <a href="/importar">Importar histórico</a></p>
+      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Selecione os times para montar o deck da Sync. · <a href="/importar">Importar histórico</a> · <a href="/configuracoes">Configurações</a></p>
       <Seletor trimestres={ultimosTrimestres(4)} cartoes={PERFIS.map((perfil) => {
         const r = resumos.find((x) => x.time === perfil.time);
         return {
           projeto: perfil.projeto,
           time: perfil.time,
           metodologia: perfil.metodologia,
+          // Escolha geral/por frente só para quem divide sprints entre frentes (Nexus, Eficientes); o TRG já é sempre por frente.
+          frentes: perfil.sprintsPorFrente ? [] : perfil.frentes ?? [],
           sprints: sprints.filter((x) => x.time === perfil.time)
             .map((x) => ({ id: x.periodo_id, nome: x.frente && x.frente !== perfil.time ? `${x.nome} (${x.frente})` : x.nome ?? x.periodo_id, fim: x.fim })),
           conteudo: (

@@ -27,7 +27,9 @@ describe("delivery", () => {
       ["2026-10-05T10:00:00.000-0300", "Liberado para validação", "Concluído"],
     ]), trg)!;
     expect(i.entregue).toBe(true);
-    expect(i.cycleTimeDias).toBe(4);
+    // qui 10h → seg 10h em tempo útil (9h–18h48): 8,8h + 9,8h + 1h = 19,6h = 2 dias úteis
+    expect(i.cycleTimeHoras).toBeCloseTo(19.6);
+    expect(i.cycleTimeDias).toBeCloseTo(2);
   });
 
   it("lê a frente pelo campo do perfil", () => {
@@ -47,7 +49,8 @@ describe("suporte", () => {
       ["2026-10-06T12:00:00.000-0300", "Resolvido", "Fechado com êxito"],
     ]), ic, sc)!;
     expect(s.resolvidoEm.toISOString()).toBe("2026-10-03T15:00:00.000Z");
-    expect(s.tempoResolucaoDias).toBe(2);
+    // qui 12h → sáb 12h: 6,8h + 9,8h (sábado não conta)
+    expect(s.tempoResolucaoHoras).toBeCloseTo(16.6);
     expect(s.nivel).toBe("N2");
   });
 

@@ -33,6 +33,8 @@ type Props = {
   referencia?: { valor: number; rotulo: string };
   largura?: number;
   altura?: number;
+  /** Posição (em índice de rótulo, pode ser fracionária) de uma linha vertical de marco. */
+  marco?: number;
 };
 
 const M = { t: 24, r: 16, b: 56, l: 48 };
@@ -117,12 +119,15 @@ export function Barras({ rotulos, series, modo = "agrupado", formato = (v) => St
   );
 }
 
-export function Linhas({ rotulos, series, formato = (v) => String(v), largura = 1100, altura = 380 }: Props) {
+export function Linhas({ rotulos, series, formato = (v) => String(v), largura = 1100, altura = 380, marco }: Props) {
   const w = largura - M.l - M.r, h = altura - M.t - M.b;
   const passo = rotulos.length > 1 ? w / (rotulos.length - 1) : 0;
   const max = Math.max(...series.flatMap((s) => s.valores.map((v) => v ?? 0)), 1) * 1.2;
   const x = (k: number) => M.l + (rotulos.length > 1 ? k * passo : w / 2);
   const y = (v: number) => M.t + h - (v / max) * h;
+  // Gráfico pequeno com muitos pontos: rótulos de eixo alternados e sem valor em cada ponto.
+  const denso = rotulos.length * 48 > largura;
+  const passoRotulo = denso ? Math.ceil((rotulos.length * 48) / largura) : 1;
   return (
     <svg viewBox={`0 0 ${largura} ${altura}`} width="100%" height="100%" role="img">
       <line x1={M.l} x2={M.l + w} y1={M.t + h} y2={M.t + h} stroke={COR.grade} />
@@ -135,13 +140,14 @@ export function Linhas({ rotulos, series, formato = (v) => String(v), largura = 
             {pts.map(([a, b, v], k) => (
               <g key={k}>
                 <circle cx={a} cy={b} r={4.5} fill={cor} />
-                <text x={a} y={b - 10} textAnchor="middle" fontSize={12} fill={COR.texto}>{formato(v)}</text>
+                {(!denso || k === pts.length - 1) && <text x={a} y={b - 10} textAnchor="middle" fontSize={12} fill={COR.texto}>{formato(v)}</text>}
               </g>
             ))}
           </g>
         );
       })}
-      {rotulos.map((r, k) => (
+      {marco != null && <line x1={x(marco)} x2={x(marco)} y1={M.t} y2={M.t + h} stroke={COR.referencia} strokeDasharray="6 4" />}
+      {rotulos.map((r, k) => k % passoRotulo !== 0 ? null : (
         <text key={r + k} x={x(k)} y={M.t + h + 22} textAnchor="middle" fontSize={13} fill={COR.eixo}>{r}</text>
       ))}
       <Legenda series={series} y={altura - 18} />

@@ -61,6 +61,8 @@ export type Perfil = {
    * é reconhecida pelo título. Sem séries, todos os health checks do time valem para o time inteiro.
    */
   teamRetroSeries?: { titulo: RegExp; frente: string | null }[];
+  /** Frentes do time (valores do campo de frente no Jira). */
+  frentes?: string[];
   /** Times em que cada frente tem board e sprints próprios: a frente é reconhecida pelo nome da sprint. */
   sprintsPorFrente?: { nome: RegExp; frente: string }[];
 };
@@ -78,7 +80,7 @@ export const PERFIS: Perfil[] = [
   },
   {
     time: "Nexus", teamRetroId: "1XtWnmAm96BUaqWKtZrP6O", projeto: "NXS", metodologia: "scrum", periodo: "sprint",
-    campoFrente: { id: CAMPOS.frenteDeTrabalho, nome: "Frente de Trabalho" },
+    campoFrente: { id: CAMPOS.frenteDeTrabalho, nome: "Frente de Trabalho" }, frentes: ["Integrações", "Avaliações"],
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Nexus", papel: "chamado", naSprint: false }],
   },
@@ -92,7 +94,7 @@ export const PERFIS: Perfil[] = [
   },
   {
     time: "Eficientes", teamRetroId: "5AdSqS9J5M8Zk9pLNLZwoG", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29",
-    campoFrente: { id: CAMPOS.frente, nome: "Frente" },
+    campoFrente: { id: CAMPOS.frente, nome: "Frente" }, frentes: ["Pedagógico", "Folha de Professores"],
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],
   },
@@ -100,7 +102,7 @@ export const PERFIS: Perfil[] = [
     time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^(Retaguarda|Sprint)\s+\d+/i, frente: "Retaguarda" }, { titulo: /^X-Reta\b/i, frente: "X-Retaguarda" }],
     // "X-Reta | Sprint 132" e "Sprint 110 - 13/10 - 26/10" (boards distintos)
     sprintsPorFrente: [{ nome: /^Sprint\s+\d+/i, frente: "Retaguarda" }, { nome: /^X-Reta\b/i, frente: "X-Retaguarda" }], projeto: "TRG", metodologia: "scrum", periodo: "sprint",
-    campoFrente: { id: "components", nome: "Components" },
+    campoFrente: { id: "components", nome: "Components" }, frentes: ["Retaguarda", "X-Retaguarda"],
     mapaDelivery: S.DELIVERY_TRG, tiposDelivery: ["História", "Tecnologia"],
     // Suporte entra na sprint, mas não soma pontos nem conta como item entregue.
     suporte: [{ projeto: "TRG", porTipo: true, mapa: S.DELIVERY_TRG, statusResolucao: "Concluído", papel: "chamado", naSprint: true }],

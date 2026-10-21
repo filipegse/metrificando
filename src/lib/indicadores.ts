@@ -33,6 +33,8 @@ export type Indicadores = {
   motivacao: number | null;
   /** Só no histórico das planilhas (a coleta do Jira não calcula). */
   esforcoSdd?: number | null;
+  /** Dias-dev disponíveis no período (cadastro de pessoas, ausências e feriados). */
+  capacidade?: number;
   ganhoSdd?: number | null;
   historico?: boolean;
 };

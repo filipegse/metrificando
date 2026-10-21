@@ -125,6 +125,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     ...(ps.some((p) => p.esforcoSdd != null) ? [["Pontos de esforço COM SDD", (p: Indicadores) => num(p.esforcoSdd ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.ganhoSdd != null) ? [["Ganho SDD", (p: Indicadores) => <span className={`s-${corGanho(p.ganhoSdd)}`}>{pct(p.ganhoSdd ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Itens entregues", (p) => p.itensEntregues],
+    ...(ps.some((p) => p.capacidade) ? [["Capacidade (dias-dev)", (p: Indicadores) => num(p.capacidade ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
     ["Chamados resolvidos (N3)", (p) => (p.chamados == null ? "—" : `${p.chamados} (${p.chamadosN3})`)],
     ...(t.perfil.teamRetroId ? [
@@ -249,12 +250,43 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   return slides.filter((el) => !sem[String(el.key)]);
 }
 
+/**
+ * Comparações que fazem sentido entre a fase Scrum e a fase Kanban, numa linha do tempo única.
+ * Sprints viram taxa semanal (itens e chamados ÷ semanas da sprint). Pontos e entrega % ficam de fora.
+ */
+function slideTransicao(d: DadosDeck, scrum: DadosTime, kanban: DadosTime) {
+  const semanas = (p: Indicadores) => Math.max(1, Math.round((Date.parse(p.periodo.fim) - Date.parse(p.periodo.inicio)) / (7 * 86400000)));
+  const ps = [...scrum.periodos, ...kanban.periodos];
+  const rot = ps.map((p) => (p.periodo.tipo === "sprint" ? `S${rotulo(p)}` : rotulo(p)));
+  const porSemana = (p: Indicadores, v: number | null) => (v == null ? null : p.periodo.tipo === "sprint" ? Math.round((v / semanas(p)) * 10) / 10 : v);
+  const marco = scrum.periodos.length - 0.5;
+  const nome = nomeDoTime({ ...kanban, fase: undefined });
+  const L = (slide: string) => (
+    <Leitura deck={d.deck} time={nome} slide={slide} inicial={d.leituras[chaveLeitura(nome, slide)]} demo={d.demo} />
+  );
+  return (
+    <Slide key={`transicao-${nome}`} rodape={`${nome} · Transição Scrum → Kanban · Área TAP · Grupo Salta Educação`} demo={d.demo}>
+      <div className="trilha">Sync de Agilidade &gt; {nome} &gt; <b>Transição Scrum → Kanban</b></div>
+      <h1>O que mudou com o Kanban</h1>
+      <div className="subtitulo">Só indicadores comparáveis entre as fases · sprints convertidas em taxa semanal · linha tracejada = migração</div>
+      <div className="quadro4">
+        <div><h3>Itens entregues por semana</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Itens/semana", valores: ps.map((p) => porSemana(p, p.itensEntregues)) }]} formato={num} /></div>
+        <div><h3>Tempo de ciclo P50 (dias úteis)</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
+        <div><h3>Chamados resolvidos por semana</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Chamados/semana", valores: ps.map((p) => porSemana(p, p.chamados)) }]} formato={num} /></div>
+        <div><h3>Moral do time</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#007875" }]} formato={pct} /></div>
+      </div>
+      <div className="faixa"><b>Leitura:</b>{L("transicao")}</div>
+    </Slide>
+  );
+}
+
 export default async function Apresentacao({ searchParams }: { searchParams: Busca }) {
   const q = await searchParams;
   const deck = q.trimestre ?? trimestreAtual();
   const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
-  const demo = q.demo === "1" || (!urlBanco());
-  const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos, recortesDaUrl(q));
+  const demo = q.demo === "1" || q.demo === "misto" || (!urlBanco());
+  const recortes = recortesDaUrl(q);
+  const d = demo ? deckDemo(deck, projetos, recortes, q.demo === "misto") : await carregarDeck(deck, projetos, recortes);
 
   return (
     <div className={fonte.variable}>
@@ -269,7 +301,13 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
           <span className="assinatura" aria-label="Grupo Salta" />
           {d.demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
         </section>
-        {d.times.flatMap((t) => slidesDoTime(d, t))}
+        {d.times.flatMap((t, i) => {
+          const s = slidesDoTime(d, t);
+          const ant = d.times[i - 1];
+          // Depois do bloco Kanban de um time que também teve bloco Scrum no recorte: slide de transição.
+          return t.fase === "kanban" && ant?.fase === "scrum" && ant.perfil === t.perfil && ant.frente === t.frente
+            ? [...s, slideTransicao(d, ant, t)] : s;
+        })}
         <section className="slide verde" key="fim">
           <Grafismo tipo="linhas" />
           <div className="capa"><h1>Obrigado!</h1></div>

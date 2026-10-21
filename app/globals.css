@@ -49,3 +49,19 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .acoes { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 button.botao { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
 button.botao:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+.config { display: grid; gap: 16px; }
+.config h2 { font-size: 1.1rem; margin: 0 0 4px; }
+.abas { display: flex; flex-wrap: wrap; gap: 6px; }
+.abas button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.abas button.ativa { background: #000; color: var(--verde); border-color: #000; font-weight: 700; }
+.linha-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 12px 0 16px; }
+.linha-form label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.linha-form input, .linha-form select { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
+.acoes-linha { white-space: nowrap; text-align: right; }
+.acoes-linha .link { margin-left: 10px; font-size: .85rem; }
+.link.perigo { color: #c74f24; }
+tr.encerrada td { color: var(--muted); }
+.msg { margin: 0; color: var(--petroleo); font-weight: 600; }
+.alternador { display: flex; flex-wrap: wrap; gap: 6px; }
+.alternador input { accent-color: var(--petroleo); }
+p.sub a { color: var(--petroleo); font-weight: 700; }
