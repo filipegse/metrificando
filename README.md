@@ -54,7 +54,7 @@ do Jira) e acumulados entre trimestres.
 1. Netlify: ligar o repositório ao site e ativar o **Netlify DB** (define `NETLIFY_DATABASE_URL`).
 2. Variáveis de ambiente (ver `.env.example`): `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `WEBHOOK_TOKEN`, `TEAMRETRO_API_KEY`
    e, até existir login, `APP_USUARIO`/`APP_SENHA` (senha única para abrir a aplicação).
-3. Aplicar o schema: `npm run db:schema` (com a URL do banco no ambiente).
+3. Schema: aplicado automaticamente em cada deploy (`npm run db:schema` antes do build; comandos idempotentes).
 4. Jira Automation:
    - Scrum (SCOPS, DSR, NXS, TRG, CF): gatilho **Sprint completed** → **Send web request**
      `POST https://<site>/api/webhooks/jira`, header `X-Webhook-Token: <WEBHOOK_TOKEN>`, corpo:

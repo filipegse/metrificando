@@ -1,5 +1,6 @@
 [build]
-  command = "npm run build"
+  # Aplica o schema (idempotente) antes do build, se houver banco configurado.
+  command = "npm run db:schema && npm run build"
   publish = ".next"
 
 [functions]
