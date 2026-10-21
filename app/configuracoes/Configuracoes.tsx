@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Gantt } from "./Gantt";
 
 type Expediente = { valido_de: string; inicio: string; fim: string };
 type Feriado = { data: string; nome: string; abrangencia: string };
@@ -28,7 +29,7 @@ function formulario(e: FormEvent<HTMLFormElement>) {
 }
 
 export function Configuracoes({ times }: { times: { time: string; frentes: string[] }[] }) {
-  const [aba, setAba] = useState<"expediente" | "feriados" | "pessoas" | "ausencias">("pessoas");
+  const [aba, setAba] = useState<"calendario" | "expediente" | "feriados" | "pessoas" | "ausencias">("calendario");
   const [exp, setExp] = useState<Expediente[]>([]);
   const [fer, setFer] = useState<Feriado[]>([]);
   const [pes, setPes] = useState<Pessoa[]>([]);
@@ -61,11 +62,13 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
   return (
     <div className="config">
       <nav className="abas">
-        {([["pessoas", "Pessoas e alocações"], ["ausencias", "Ausências"], ["feriados", "Feriados"], ["expediente", "Expediente"]] as const).map(([k, r]) => (
+        {([["calendario", "Calendário"], ["pessoas", "Pessoas e alocações"], ["ausencias", "Ausências"], ["feriados", "Feriados"], ["expediente", "Expediente"]] as const).map(([k, r]) => (
           <button key={k} type="button" className={aba === k ? "ativa" : ""} onClick={() => setAba(k)}>{r}</button>
         ))}
       </nav>
       {msg && <p className="msg">{msg}</p>}
+
+      {aba === "calendario" && <Gantt pessoas={pes} ausencias={aus} feriados={fer} times={times.map((t) => t.time)} />}
 
       {aba === "pessoas" && (
         <section className="card">

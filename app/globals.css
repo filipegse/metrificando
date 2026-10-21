@@ -84,3 +84,22 @@ table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
 td.vazio { color: var(--muted); text-align: center; padding: 16px; }
 table.editavel td.frente { white-space: nowrap; padding-right: 8px; }
 table.editavel select { min-width: 92px; }
+.gantt-rolagem { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.gantt { display: grid; font-size: .78rem; min-width: max-content; }
+.gantt > div, .g-linha > div { border-bottom: 1px solid var(--line); }
+.g-canto { position: sticky; left: 0; background: var(--card); z-index: 2; }
+.g-mes { font-weight: 700; padding: 4px 6px; border-left: 1px solid var(--line); background: var(--card); }
+.g-dia { text-align: center; padding: 3px 0; color: var(--muted); background: var(--card); }
+.g-dia.fds, .g-cel.fds { background: color-mix(in srgb, var(--muted) 14%, var(--card)); }
+.g-dia.feriado, .g-cel.feriado { background: color-mix(in srgb, #ff47ff 22%, var(--card)); color: #000; font-weight: 700; }
+.g-time { position: sticky; left: 0; font-weight: 700; padding: 8px 10px 4px; background: var(--bg); }
+.g-linha { display: grid; position: relative; }
+.g-nome { position: sticky; left: 0; z-index: 1; background: var(--card); padding: 4px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; line-height: 1.15; }
+.g-nome span { color: var(--muted); font-size: .7rem; }
+.g-cel { min-height: 34px; }
+.config > * { min-width: 0; }
+.g-barra { grid-row: 1; position: relative; align-self: center; height: 20px; border-radius: 5px; color: #000; font-size: .7rem; font-weight: 700; padding: 0 6px; line-height: 20px; overflow: hidden; white-space: nowrap; z-index: 0; margin: 0 1px; }
+.legenda-gantt { display: flex; flex-wrap: wrap; gap: 10px; font-size: .8rem; color: var(--muted); }
+.legenda-gantt i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.legenda-gantt i.feriado { background: color-mix(in srgb, #ff47ff 40%, white); }
+.opcao-linha { display: flex !important; align-items: center; gap: 6px; }
