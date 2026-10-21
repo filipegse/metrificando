@@ -13,6 +13,9 @@ create table if not exists periodos (
   primary key (time, periodo_id)
 );
 
+-- Frente dona do período, quando cada frente tem a própria sequência de sprints (ex.: TRG). '' = time inteiro.
+alter table periodos add column if not exists frente text not null default '';
+
 create table if not exists itens_delivery (
   time               text not null,
   periodo_id         text not null,

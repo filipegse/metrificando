@@ -51,7 +51,10 @@ export function saudeDe(hc: HealthCheck): Saude {
   };
 }
 
-type PeriodoRef = { periodo_id: string; tipo: string; inicio: string; fim: string; nome?: string | null };
+type PeriodoRef = { periodo_id: string; tipo: string; inicio: string; fim: string; nome?: string | null; frente?: string };
+
+/** Primeiro número com 2+ dígitos: "Sprint 110 - 13/10" → 110, "X-Reta | Sprint 132" → 132. */
+export const numeroDe = (texto?: string | null) => texto?.match(/\d{2,}/)?.[0];
 
 const DIA = 24 * 60 * 60 * 1000;
 export const TOLERANCIA_DIAS = 7;
@@ -62,10 +65,10 @@ export const TOLERANCIA_DIAS = 7;
  * Semana Kanban: a janela que contém a data.
  */
 export function periodoDoHealthCheck(data: string, periodos: PeriodoRef[], titulo?: string): string | null {
-  // Número da sprint no título ("Retaguarda 109", "Fluig 82", "Sprint 108 - …") tem prioridade sobre a data.
-  const n = titulo?.match(/(\d{2,})/)?.[1];
+  // Número da sprint no título ("Retaguarda 109", "Fluig 82", "X-Reta | 131") tem prioridade sobre a data.
+  const n = numeroDe(titulo);
   if (n) {
-    const porNumero = periodos.find((p) => p.tipo === "sprint" && new RegExp(`(^|\\D)${n}(\\D|$)`).test(p.nome ?? ""));
+    const porNumero = periodos.find((p) => p.tipo === "sprint" && numeroDe(p.nome) === n);
     if (porNumero) return porNumero.periodo_id;
   }
   const t = new Date(`${data}T12:00:00-03:00`).getTime();

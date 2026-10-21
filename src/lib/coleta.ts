@@ -1,4 +1,4 @@
-import { CAMPOS, perfilPorProjeto, type Perfil } from "../config/perfis";
+import { CAMPOS, frenteDaSprint, perfilPorProjeto, type Perfil } from "../config/perfis";
 import { db } from "./db";
 import { buscar } from "./jira";
 import { jqlDeliveryJanela, jqlDeliverySprint, jqlSuporte } from "./jql";
@@ -14,17 +14,17 @@ const CAMPOS_BUSCA = [
   ...Object.values(CAMPOS),
 ];
 
-type Periodo = { periodoId: string; tipo: "sprint" | "semana"; nome: string | null; inicio: Date; fim: Date };
+type Periodo = { periodoId: string; tipo: "sprint" | "semana"; nome: string | null; frente: string; inicio: Date; fim: Date };
 
 function periodoDoEvento(e: Evento, perfil: Perfil): Periodo {
   if (e.evento === "sprint_concluida") {
     if (perfil.metodologia !== "scrum") throw new Error(`${perfil.time} não está em Scrum`);
-    return { periodoId: e.sprint_id, tipo: "sprint", nome: e.sprint_nome ?? null, inicio: new Date(e.inicio), fim: new Date(e.fim) };
+    return { periodoId: e.sprint_id, tipo: "sprint", nome: e.sprint_nome ?? null, frente: frenteDaSprint(perfil, e.sprint_nome), inicio: new Date(e.inicio), fim: new Date(e.fim) };
   }
   if (perfil.metodologia !== "kanban") throw new Error(`${perfil.time} não está em Kanban`);
   // Disparo de sexta 23h: a janela que contém a referência é a que acabou de fechar.
   const j = janelaSemanal(e.referencia ? new Date(e.referencia) : new Date());
-  return { periodoId: j.periodoId, tipo: "semana", nome: null, inicio: j.inicio, fim: j.fim };
+  return { periodoId: j.periodoId, tipo: "semana", nome: null, frente: "", inicio: j.inicio, fim: j.fim };
 }
 
 export async function coletar(e: Evento): Promise<{ time: string; periodoId: string; delivery: number; suporte: number }> {
@@ -42,7 +42,10 @@ export async function coletar(e: Evento): Promise<{ time: string; periodoId: str
   const suporte: ItemSuporte[] = [];
   for (const fonte of perfil.suporte) {
     const issues = await buscar(jqlSuporte(fonte, periodo.inicio, periodo.fim), CAMPOS_BUSCA);
-    suporte.push(...issues.map((i) => normalizarSuporte(i, perfil, fonte)).filter((i): i is ItemSuporte => i !== null));
+    suporte.push(...issues.map((i) => normalizarSuporte(i, perfil, fonte))
+      .filter((i): i is ItemSuporte => i !== null)
+      // Sprint de uma frente só leva o suporte daquela frente (o projeto é compartilhado).
+      .filter((i) => !periodo.frente || (i.frente ?? "").split(", ").includes(periodo.frente)));
   }
 
   await gravar(perfil, periodo, delivery, suporte);
@@ -54,8 +57,8 @@ async function gravar(perfil: Perfil, p: Periodo, delivery: ItemDelivery[], supo
   const sql = db();
   const comandos = [
     sql`delete from periodos where time = ${perfil.time} and periodo_id = ${p.periodoId}`,
-    sql`insert into periodos (time, periodo_id, tipo, nome, inicio, fim, metodologia)
-        values (${perfil.time}, ${p.periodoId}, ${p.tipo}, ${p.nome}, ${p.inicio}, ${p.fim}, ${perfil.metodologia})`,
+    sql`insert into periodos (time, periodo_id, tipo, nome, frente, inicio, fim, metodologia)
+        values (${perfil.time}, ${p.periodoId}, ${p.tipo}, ${p.nome}, ${p.frente}, ${p.inicio}, ${p.fim}, ${perfil.metodologia})`,
     ...delivery.map((i) => sql`
       insert into itens_delivery (time, periodo_id, chave, frente, tipo_jira, tipo_canonico, sp_sdd, sp_sem_sdd, sp_original,
         planejamento, categoria_roadmap, status_jira, etapa_final, entregue, entregue_em, cycle_time_dias)

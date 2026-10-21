@@ -61,3 +61,22 @@ describe("time compartilhado no TeamRetro", async () => {
     expect(serie("CF", "X-Reta | 131")).toBeUndefined();
   });
 });
+
+describe("frentes com sprints próprias (TRG)", async () => {
+  const { perfilPorProjeto, frenteDaSprint } = await import("../src/config/perfis");
+  const trg = perfilPorProjeto("TRG")!;
+  it("reconhece a frente pelo nome da sprint", () => {
+    expect(frenteDaSprint(trg, "X-Reta | Sprint 132")).toBe("X-Retaguarda");
+    expect(frenteDaSprint(trg, "Sprint 110 - 13/10 - 26/10")).toBe("Retaguarda");
+    expect(frenteDaSprint(perfilPorProjeto("DSR")!, "DSR 70")).toBe("");
+  });
+  it("health check casa pelo número da sprint, sem confundir com a data do nome", () => {
+    const periodos = [
+      { periodo_id: "a", tipo: "sprint", nome: "Sprint 110 - 13/10 - 26/10", inicio: "2026-10-13T03:00:00Z", fim: "2026-10-26T20:00:00Z", frente: "Retaguarda" },
+      { periodo_id: "b", tipo: "sprint", nome: "Sprint 109 - 29/09 - 12/10", inicio: "2026-09-29T03:00:00Z", fim: "2026-10-12T20:00:00Z", frente: "Retaguarda" },
+    ];
+    expect(periodoDoHealthCheck("2026-10-27", periodos, "Retaguarda 110")).toBe("a");
+    expect(periodoDoHealthCheck("2026-10-27", periodos, "Retaguarda 109")).toBe("b");
+    expect(periodoDoHealthCheck("2026-10-27", [{ periodo_id: "x", tipo: "sprint", nome: "X-Reta | Sprint 132", inicio: "2026-10-13T03:00:00Z", fim: "2026-10-26T20:00:00Z" }], "X-Reta | 132")).toBe("x");
+  });
+});

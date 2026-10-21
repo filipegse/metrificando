@@ -2,7 +2,10 @@ import { PERFIS, type Perfil } from "../config/perfis";
 import { db } from "./db";
 import { indicadores, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
 
-export type DadosTime = { perfil: Perfil; periodos: Indicadores[] };
+/** `frente` preenchida quando o time é apresentado por frente (cada uma com sprints próprias). */
+export type DadosTime = { perfil: Perfil; frente?: string; periodos: Indicadores[] };
+
+export const nomeDoTime = (t: DadosTime) => (t.frente && t.frente !== t.perfil.time ? `${t.perfil.time} · ${t.frente}` : t.perfil.time);
 export type DadosDeck = { deck: string; rotulo: string; times: DadosTime[]; leituras: Record<string, string>; demo: boolean };
 
 /** "2026-Q4" → intervalo do trimestre. */
@@ -31,7 +34,7 @@ export async function carregarDeck(deck: string, projetos: string[]): Promise<Da
   for (const perfil of perfis) {
     // Período entra no trimestre pela data de fim (sprint fechada / janela fechada).
     const periodos = (await sql`
-      select periodo_id, nome, tipo, inicio::text, fim::text from periodos
+      select periodo_id, nome, tipo, frente, inicio::text, fim::text from periodos
       where time = ${perfil.time} and fim >= ${de} and fim < ${ate} order by fim`) as Periodo[];
     const ids = periodos.map((p) => p.periodo_id);
     const delivery = (await sql`
@@ -43,7 +46,12 @@ export async function carregarDeck(deck: string, projetos: string[]): Promise<Da
     const saude = (await sql`
       select periodo_id, frente, produtividade::float, motivacao::float, respostas
       from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
-    times.push({ perfil, periodos: periodos.map((p) => indicadores(p, delivery, suporte, saude)) });
+    const todos = periodos.map((p) => indicadores(p, delivery, suporte, saude));
+    if (perfil.sprintsPorFrente) {
+      for (const { frente } of perfil.sprintsPorFrente) {
+        times.push({ perfil, frente, periodos: todos.filter((i) => i.periodo.frente === frente) });
+      }
+    } else times.push({ perfil, periodos: todos });
   }
   const leituras: Record<string, string> = {};
   for (const l of (await sql`select time, slide, texto from leituras where deck = ${deck}`) as { time: string; slide: string; texto: string }[]) {
@@ -57,7 +65,8 @@ export function deckDemo(deck: string, projetos: string[]): DadosDeck {
   const { rotulo } = intervaloTrimestre(deck);
   let semente = 7;
   const rnd = () => ((semente = (semente * 9301 + 49297) % 233280) / 233280);
-  const times = PERFIS.filter((p) => projetos.includes(p.projeto)).map((perfil) => {
+  const times = PERFIS.filter((p) => projetos.includes(p.projeto)).flatMap((perfil) =>
+    (perfil.sprintsPorFrente?.map((f) => f.frente) ?? [undefined]).map((frente) => {
     const scrum = perfil.metodologia === "scrum";
     const n = scrum ? 5 : 12;
     const periodos: Indicadores[] = Array.from({ length: n }, (_, k) => {
@@ -65,7 +74,7 @@ export function deckDemo(deck: string, projetos: string[]): DadosDeck {
       const extra = Math.round(pts * (0.05 + rnd() * 0.25));
       const chamados = Math.round(8 + rnd() * 20);
       return {
-        periodo: { periodo_id: String(k), nome: scrum ? `${perfil.projeto} ${60 + k}` : null, tipo: scrum ? "sprint" : "semana",
+        periodo: { periodo_id: String(k), nome: scrum ? `${frente === "X-Retaguarda" ? "X-Reta | Sprint " : perfil.projeto + " "}${(frente === "X-Retaguarda" ? 128 : 60) + k}` : null, tipo: scrum ? "sprint" : "semana",
           inicio: new Date(Date.UTC(2026, 9, 1 + k * (scrum ? 14 : 7))).toISOString(),
           fim: new Date(Date.UTC(2026, 9, (k + 1) * (scrum ? 14 : 7))).toISOString() },
         entrega: scrum ? 0.7 + rnd() * 0.45 : null,
@@ -82,7 +91,7 @@ export function deckDemo(deck: string, projetos: string[]): DadosDeck {
         motivacao: perfil.teamRetroId ? 0.78 + rnd() * 0.2 : null,
       };
     });
-    return { perfil, periodos };
-  });
+    return { perfil, frente, periodos };
+  }));
   return { deck, rotulo, times, leituras: {}, demo: true };
 }

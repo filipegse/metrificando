@@ -37,6 +37,7 @@
 .capa { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; padding-bottom: 60px; }
 .capa h1 { font-size: 92px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
 .capa .sub-capa { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+.capa .frente-capa { font-size: 40px; font-weight: 700; color: var(--branco); margin-top: 4px; }
 .capa .sub { font-size: 24px; font-weight: 600; margin-top: 18px; }
 .escuro .capa .sub { color: var(--branco); }
 .capa .times { font-size: 18px; margin-top: 28px; }

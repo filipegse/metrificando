@@ -61,6 +61,8 @@ export type Perfil = {
    * é reconhecida pelo título. Sem séries, todos os health checks do time valem para o time inteiro.
    */
   teamRetroSeries?: { titulo: RegExp; frente: string | null }[];
+  /** Times em que cada frente tem board e sprints próprios: a frente é reconhecida pelo nome da sprint. */
+  sprintsPorFrente?: { nome: RegExp; frente: string }[];
 };
 
 export const PERFIS: Perfil[] = [
@@ -95,7 +97,9 @@ export const PERFIS: Perfil[] = [
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^(Retaguarda|Sprint)\s+\d+/i, frente: "Retaguarda" }, { titulo: /^X-Reta\b/i, frente: "X-Retaguarda" }], projeto: "TRG", metodologia: "scrum", periodo: "sprint",
+    time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^(Retaguarda|Sprint)\s+\d+/i, frente: "Retaguarda" }, { titulo: /^X-Reta\b/i, frente: "X-Retaguarda" }],
+    // "X-Reta | Sprint 132" e "Sprint 110 - 13/10 - 26/10" (boards distintos)
+    sprintsPorFrente: [{ nome: /^Sprint\s+\d+/i, frente: "Retaguarda" }, { nome: /^X-Reta\b/i, frente: "X-Retaguarda" }], projeto: "TRG", metodologia: "scrum", periodo: "sprint",
     campoFrente: { id: "components", nome: "Components" },
     mapaDelivery: S.DELIVERY_TRG, tiposDelivery: ["História", "Tecnologia"],
     // Suporte entra na sprint, mas não soma pontos nem conta como item entregue.
@@ -111,4 +115,8 @@ export const PERFIS: Perfil[] = [
 
 export function perfilPorProjeto(projeto: string): Perfil | undefined {
   return PERFIS.find((p) => p.projeto === projeto);
+}
+
+export function frenteDaSprint(perfil: Perfil, nomeSprint: string | null | undefined): string {
+  return perfil.sprintsPorFrente?.find((f) => f.nome.test(nomeSprint ?? ""))?.frente ?? "";
 }

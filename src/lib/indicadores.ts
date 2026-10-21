@@ -7,7 +7,7 @@ export type LinhaDelivery = {
 };
 export type LinhaSuporte = { periodo_id: string; nivel: string | null; papel: string; tempo_resolucao_dias: number };
 export type LinhaSaude = { periodo_id: string; frente?: string; produtividade: number | null; motivacao: number | null; respostas: number };
-export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string };
+export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string; frente?: string };
 
 export type Indicadores = {
   periodo: Periodo;

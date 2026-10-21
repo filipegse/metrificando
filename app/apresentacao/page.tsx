@@ -2,9 +2,10 @@
 // /apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC  (demo=1 usa dados fictícios)
 import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
-import { carregarDeck, chaveLeitura, deckDemo, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
+import { carregarDeck, chaveLeitura, deckDemo, nomeDoTime, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
 import { corEntrega, corExtras, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
 import { urlBanco } from "@/lib/db";
+import { numeroDe } from "@/lib/teamretro";
 import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
@@ -21,7 +22,8 @@ type Busca = Promise<Record<string, string | undefined>>;
 const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)}%`);
 const num = (v: number | null) => (v == null ? "—" : String(Math.round(v * 10) / 10).replace(".", ","));
 const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Bahia", day: "2-digit", month: "2-digit" });
-const rotulo = (p: Indicadores) => p.periodo.nome?.replace(/^\S+\s/, "") ?? dataBR(p.periodo.inicio);
+// Número da sprint ("Sprint 110 - 13/10 - 26/10" → 110, "X-Reta | Sprint 132" → 132); semana Kanban pela data.
+const rotulo = (p: Indicadores) => (p.periodo.nome ? numeroDe(p.periodo.nome) ?? p.periodo.nome : dataBR(p.periodo.inicio));
 
 const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecnologia", bug: "Correção", operacional: "Operacional", ajuste: "Ajuste", outro: "Outro" };
 
@@ -38,7 +40,7 @@ const secao = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string; titulo: string; sub?: string }) {
   return (
     <>
-      <div className="trilha">Sync de Agilidade &gt; {t.perfil.time} &gt; <b>{secao(eyebrow)}</b></div>
+      <div className="trilha">Sync de Agilidade &gt; {nomeDoTime(t)} &gt; <b>{secao(eyebrow)}</b></div>
       <h1>{titulo}</h1>
       {sub && <div className="subtitulo">{sub}</div>}
     </>
@@ -83,10 +85,10 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const unidade = scrum ? "Sprints" : "Semanas (sáb–sex)";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
-    <Leitura deck={d.deck} time={t.perfil.time} slide={slide} inicial={d.leituras[chaveLeitura(t.perfil.time, slide)]} demo={d.demo} placeholder={placeholder} />
+    <Leitura deck={d.deck} time={nomeDoTime(t)} slide={slide} inicial={d.leituras[chaveLeitura(nomeDoTime(t), slide)]} demo={d.demo} placeholder={placeholder} />
   );
   const Faixa = ({ slide }: { slide: string }) => <div className="faixa"><b>Leitura:</b>{L(slide)}</div>;
-  const rodape = `${t.perfil.time} · Indicadores · Área TAP · Grupo Salta Educação`;
+  const rodape = `${nomeDoTime(t)} · Indicadores · Área TAP · Grupo Salta Educação`;
   const medianaPts = percentil(ps.map((p) => p.ptsSdd), 0.5);
   const intervalo = ps.length ? `${rotulo(ps[0])} a ${rotulo(ps.at(-1)!)}` : "sem períodos coletados";
 
@@ -98,6 +100,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <div className="capa">
         <div className="sub-capa">Área TAP · {d.rotulo}</div>
         <h1>{t.perfil.time}</h1>
+        {t.frente && <div className="frente-capa">Frente {t.frente}</div>}
         <div className="sub">{unidade}: {intervalo}</div>
       </div>
     </Slide>
@@ -212,7 +215,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porRoadmap")} /></div>
       <Faixa slide="roadmap" />
     </Slide>,
-    <Slide key="suporte" rodape={`${t.perfil.time} · Suporte · Área TAP · Grupo Salta Educação`} demo={d.demo}>
+    <Slide key="suporte" rodape={`${nomeDoTime(t)} · Suporte · Área TAP · Grupo Salta Educação`} demo={d.demo}>
       <Cabecalho t={t} eyebrow="SUPORTE" titulo="Chamados resolvidos" sub={`Por nível · ${t.perfil.suporte.filter((f) => f.papel === "chamado").map((f) => f.projeto).join(", ")}`} />
       <div className="grafico metade"><h3>Chamados por nível</h3>
         <Barras largura={560} rotulos={rot} series={[
@@ -226,7 +229,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       </div>
       <Faixa slide="suporte" />
     </Slide>,
-    <Slide key="destaques" rodape={`${t.perfil.time} · Roadmap de Negócio · Área TAP · Grupo Salta Educação`} demo={d.demo}>
+    <Slide key="destaques" rodape={`${nomeDoTime(t)} · Roadmap de Negócio · Área TAP · Grupo Salta Educação`} demo={d.demo}>
       <Cabecalho t={t} eyebrow="ROADMAP DE NEGÓCIO" titulo="Destaques do roadmap" />
       <div className="blocos">
         <div className="bloco"><header>Atividades previstas para o {d.rotulo}</header>{L("destaques-principal", "Liste as atividades previstas…")}</div>
@@ -253,7 +256,7 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
           <div className="capa">
             <h1>Sync de Agilidade</h1>
             <div className="sub">Área TAP · {d.rotulo}</div>
-            <div className="times">{d.times.map((t) => t.perfil.time).join("   ·   ")}</div>
+            <div className="times">{[...new Set(d.times.map((t) => t.perfil.time))].join("   ·   ")}</div>
           </div>
           <span className="assinatura" aria-label="Grupo Salta" />
           {d.demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
