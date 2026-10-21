@@ -25,6 +25,7 @@ export function Importador() {
   const [mapa, setMapa] = useState<Partial<Record<Campo, number>>>({});
   const [timePadrao, setTimePadrao] = useState("");
   const [estado, setEstado] = useState("");
+  const [unidade, setUnidade] = useState<"auto" | "horas" | "dias">("auto");
 
   const cabecalho = dados[linhaTitulo - 1] ?? [];
 
@@ -50,9 +51,9 @@ export function Importador() {
     const [time, frente] = timePadrao.split("|");
     return montarLinhas(dados, linhaTitulo, mapa, {
       tipo: FONTES[fonte].tipo, duracaoDias: FONTES[fonte].dias,
-      timePadrao: time ? { time, frente: frente || undefined } : undefined,
+      timePadrao: time ? { time, frente: frente || undefined } : undefined, unidadeCiclo: unidade,
     });
-  }, [dados, linhaTitulo, mapa, fonte, timePadrao]);
+  }, [dados, linhaTitulo, mapa, fonte, timePadrao, unidade]);
 
   async function abrir(f: File | undefined) {
     if (!f) return;
@@ -96,6 +97,13 @@ export function Importador() {
           <label>Arquivo CSV <input type="file" accept=".csv,text/csv" onChange={(e) => abrir(e.target.files?.[0])} /></label>
           <label>Linha do cabeçalho
             <input type="number" min={1} max={Math.max(1, dados.length)} value={linhaTitulo} onChange={(e) => setLinhaTitulo(Number(e.target.value) || 1)} />
+          </label>
+          <label>Unidade do tempo de ciclo
+            <select value={unidade} onChange={(e) => setUnidade(e.target.value as typeof unidade)}>
+              <option value="auto">Detectar{resultado?.unidadeCiclo ? ` (${resultado.unidadeCiclo === "horas" ? "horas úteis" : "dias úteis"})` : ""}</option>
+              <option value="horas">Horas úteis (÷ 9,8 → dias úteis)</option>
+              <option value="dias">Dias úteis</option>
+            </select>
           </label>
           <label>Time da planilha
             <select value={timePadrao} onChange={(e) => setTimePadrao(e.target.value)}>

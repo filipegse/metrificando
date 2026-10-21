@@ -71,3 +71,15 @@ describe("planilha da Retaguarda / Contas a Pagar", () => {
     expect(r.linhas[1].produtividade).toBeCloseTo(0.94);
   });
 });
+
+describe("tempo de ciclo da planilha", async () => {
+  const { unidadeCiclo } = await import("../src/lib/importacao");
+  it("horas úteis viram dias úteis (÷ 9,8)", () => {
+    const d = lerCsv("Squad,Sprint,Fim,Tempo do Ciclo\nRetaguarda,S86,21/11/2025,\"220,01\"\nX-Retaguarda,S107,18/11/2025,\"73,85\"");
+    const r = montarLinhas(d, 1, sugerirMapa(d[0]), { tipo: "sprint", duracaoDias: 14 });
+    expect(r.unidadeCiclo).toBe("horas");
+    expect(r.linhas[0].cycle_p50).toBeCloseTo(22.45, 1);
+    expect(r.linhas[1].cycle_p50).toBeCloseTo(7.54, 1);
+  });
+  it("valores pequenos já são dias", () => expect(unidadeCiclo([2.3, 4.1, 5])).toBe("dias"));
+});

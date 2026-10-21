@@ -27,7 +27,7 @@ export const CAMPOS: { campo: Campo; rotulo: string; tipo: "texto" | "data" | "n
   { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["itens concluidos sem suporte", "qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"] },
   // Reserva quando "sem suporte" vem negativo (CF: suporte fora da sprint, a fórmula da planilha desconta mesmo assim).
   { campo: "itens_total", rotulo: "Itens concluídos (total, reserva)", tipo: "numero", apelidos: [], exatos: ["qtd itens concluidos"] },
-  { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50"] },
+  { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50"], exatos: ["tempo do ciclo", "tempo de ciclo"] },
   { campo: "cycle_p85", rotulo: "Tempo de ciclo P85", tipo: "numero", apelidos: ["tempo do ciclo p85", "p85 tempo do ciclo", "cycle time p85", "tempo de ciclo p85"] },
   { campo: "produtividade", rotulo: "Produtividade (geral)", tipo: "escala", apelidos: ["produtividade geral", "% produtividade"], exatos: ["produtividade"] },
   { campo: "motivacao", rotulo: "Motivação (geral)", tipo: "escala", apelidos: ["motivacao geral", "% motivacao"], exatos: ["motivacao"] },
@@ -162,11 +162,23 @@ export type LinhaHistorico = {
   time: string; frente: string; nome: string; tipo: "sprint" | "semana"; inicio: string | null; fim: string;
 } & Partial<Record<Exclude<Campo, "time" | "nome" | "inicio" | "fim" | "prod_coletiva" | "prod_individual" | "mot_coletiva" | "mot_individual">, number | null>>;
 
-export type Resultado = { linhas: LinhaHistorico[]; avisos: { linha: number; motivo: string }[] };
+/** Jornada usada para converter horas úteis em dias úteis (expediente 9h–18h48). */
+export const HORAS_POR_DIA_UTIL = 9.8;
+
+/**
+ * Unidade do tempo de ciclo na planilha. Sem indicação, deduz pela mediana: acima de 30 é hora
+ * (ciclo de 30+ dias úteis numa sprint de 2 semanas não faz sentido).
+ */
+export function unidadeCiclo(valores: (number | null | undefined)[]): "horas" | "dias" {
+  const v = valores.filter((x): x is number => x != null).sort((a, b) => a - b);
+  return v.length && v[Math.floor(v.length / 2)] > 30 ? "horas" : "dias";
+}
+
+export type Resultado = { linhas: LinhaHistorico[]; avisos: { linha: number; motivo: string }[]; unidadeCiclo?: "horas" | "dias" };
 
 export function montarLinhas(
   dados: string[][], linhaTitulo: number, mapa: Partial<Record<Campo, number>>,
-  opcoes: { tipo: "sprint" | "semana"; duracaoDias: number; timePadrao?: { time: string; frente?: string } },
+  opcoes: { tipo: "sprint" | "semana"; duracaoDias: number; timePadrao?: { time: string; frente?: string }; unidadeCiclo?: "horas" | "dias" | "auto" },
 ): Resultado {
   const linhas: LinhaHistorico[] = [], avisos: Resultado["avisos"] = [];
   const valor = (l: string[], c: Campo) => (mapa[c] === undefined ? undefined : l[mapa[c]!]?.trim());
@@ -199,5 +211,13 @@ export function montarLinhas(
     if (linha.itens_entregues != null && linha.itens_entregues < 0) linha.itens_entregues = aux.itens_total ?? null;
     linhas.push(linha);
   });
-  return { linhas, avisos };
+  // Tempo de ciclo sempre gravado em dias úteis (como a coleta do Jira).
+  const unidade = !opcoes.unidadeCiclo || opcoes.unidadeCiclo === "auto"
+    ? unidadeCiclo(linhas.flatMap((l) => [l.cycle_p50, l.cycle_p85])) : opcoes.unidadeCiclo;
+  if (unidade === "horas") {
+    for (const l of linhas) for (const c of ["cycle_p50", "cycle_p85"] as const) {
+      if (l[c] != null) l[c] = Math.round((l[c]! / HORAS_POR_DIA_UTIL) * 100) / 100;
+    }
+  }
+  return { linhas, avisos, unidadeCiclo: unidade };
 }
