@@ -31,10 +31,22 @@ Next.js (app/): visões
 - Kanban (IC, EFC): janela sábado–sexta, America/Bahia.
 - Coleta idempotente por `time + periodo_id`.
 
+## Modo apresentação
+
+`/apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC` monta o deck da Sync de Agilidade com o
+layout da skill `sync-agilidade-deck`: capa, matriz com semáforo e cards, entrega (Scrum) ou
+vazão (Kanban), desempenho COM/SEM SDD, tempo de ciclo, composições, roadmap, suporte e
+destaques. Os textos de leitura são editados no próprio slide e salvos no banco (tabela
+`leituras`). `demo=1` usa dados fictícios. Teclas: ← → navegar, F tela cheia, P imprimir/PDF.
+
+Fora do deck por enquanto: ganho SDD e pontos de esforço (vêm da planilha auxiliar SDD, não
+do Jira), produtividade e motivação (TeamRetro), acumulados entre trimestres.
+
 ## Configuração
 
 1. Netlify: ligar o repositório ao site e ativar o **Netlify DB** (define `NETLIFY_DATABASE_URL`).
-2. Variáveis de ambiente (ver `.env.example`): `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `WEBHOOK_TOKEN`.
+2. Variáveis de ambiente (ver `.env.example`): `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `WEBHOOK_TOKEN`
+   e, até existir login, `APP_USUARIO`/`APP_SENHA` (senha única para abrir a aplicação).
 3. Aplicar o schema: `npm run db:schema` (com a URL do banco no ambiente).
 4. Jira Automation:
    - Scrum (SCOPS, DSR, NXS, TRG, CF): gatilho **Sprint completed** → **Send web request**
@@ -57,7 +69,5 @@ npm run dev
 
 ## Pendências conhecidas
 
-- Validar no Jira os nomes exatos dos tipos (História, Tecnologia, Correção, Suporte) em TRG e CF.
-- Suporte do TRG: assumido que segue o workflow de delivery do TRG, com resolução em `Concluído` (a confirmar).
-- Rede de segurança: Scheduled Functions têm limite de 30 s. Se o volume crescer, ela deve só enfileirar coletas na background function.
-- Login com Google Workspace (Auth.js) e telas de modo apresentação: próximas etapas.
+- Login com Google Workspace (Auth.js) substituindo a senha provisória.
+- Entrega % usa os itens na sprint no fechamento; itens removidos no meio da sprint não entram no planejado.

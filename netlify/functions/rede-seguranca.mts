@@ -1,7 +1,7 @@
-// Rede de segurança diária: coleta sprints fechadas sem registro de coleta ok.
+// Rede de segurança diária: encontra sprints fechadas sem coleta ok e enfileira na background function.
+// Scheduled Functions têm limite de 30 s, então a coleta em si não roda aqui.
 import type { Config } from "@netlify/functions";
 import { PERFIS } from "../../src/config/perfis";
-import { coletar, registrarColeta } from "../../src/lib/coleta";
 import { db } from "../../src/lib/db";
 import { agile } from "../../src/lib/jira";
 
@@ -17,12 +17,11 @@ export default async () => {
       for (const s of sprints.values.filter((s) => s.completeDate && new Date(s.completeDate).getTime() > limite)) {
         const ok = await sql`select 1 from coletas where time = ${perfil.time} and periodo_id = ${String(s.id)} and status = 'ok' limit 1`;
         if (ok.length) continue;
-        try {
-          await coletar({ evento: "sprint_concluida", projeto: perfil.projeto, sprint_id: String(s.id), sprint_nome: s.name, inicio: s.startDate, fim: s.completeDate });
-          await registrarColeta("rede_seguranca", perfil.time, String(s.id), "ok");
-        } catch (erro) {
-          await registrarColeta("rede_seguranca", perfil.time, String(s.id), "erro", String(erro));
-        }
+        await fetch(`${process.env.URL}/.netlify/functions/coleta-background`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-webhook-token": process.env.WEBHOOK_TOKEN ?? "" },
+          body: JSON.stringify({ evento: "sprint_concluida", projeto: perfil.projeto, sprint_id: String(s.id), sprint_nome: s.name, inicio: s.startDate, fim: s.completeDate }),
+        });
       }
     }
   }

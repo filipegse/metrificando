@@ -1,0 +1,223 @@
+// Modo apresentação no formato da Sync de Agilidade.
+// /apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC  (demo=1 usa dados fictícios)
+import { Work_Sans } from "next/font/google";
+import { PERFIS } from "@/config/perfis";
+import { carregarDeck, chaveLeitura, deckDemo, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
+import { corEntrega, corExtras, corPontos, percentil, type Indicadores } from "@/lib/indicadores";
+import { Barras, Linhas } from "./graficos";
+import { Deck } from "./Deck";
+import { Leitura } from "./Leitura";
+import "./deck.css";
+
+const fonte = Work_Sans({ subsets: ["latin"], weight: ["400", "600", "700", "800"] });
+
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Sync de Agilidade — Metrificando" };
+
+type Busca = Promise<Record<string, string | undefined>>;
+
+const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)}%`);
+const num = (v: number | null) => (v == null ? "—" : String(Math.round(v * 10) / 10).replace(".", ","));
+const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Bahia", day: "2-digit", month: "2-digit" });
+const rotulo = (p: Indicadores) => p.periodo.nome?.replace(/^\S+\s/, "") ?? dataBR(p.periodo.inicio);
+
+const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecnologia", bug: "Correção", operacional: "Operacional", ajuste: "Ajuste", outro: "Outro" };
+
+function series(periodos: Indicadores[], campo: "porPlanejamento" | "porTipo" | "porRoadmap", nomes?: Record<string, string>) {
+  const chaves = [...new Set(periodos.flatMap((p) => Object.keys(p[campo])))];
+  return chaves.map((c) => ({ nome: nomes?.[c] ?? c, valores: periodos.map((p) => p[campo][c] ?? 0) }));
+}
+
+function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string; titulo: string; sub?: string }) {
+  return (
+    <>
+      <div className="eyebrow">{t.perfil.time} · {eyebrow}</div>
+      <h1>{titulo}</h1>
+      {sub && <div className="subtitulo">{sub}</div>}
+    </>
+  );
+}
+
+function Slide({ children, escuro, rodape, demo }: { children: React.ReactNode; escuro?: boolean; rodape?: string; demo?: boolean }) {
+  return (
+    <section className={`slide ${escuro ? "escuro" : ""}`}>
+      {children}
+      {demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
+      <div className="rodape">{rodape ?? "Área TAP · Grupo Salta Educação"}</div>
+    </section>
+  );
+}
+
+function slidesDoTime(d: DadosDeck, t: DadosTime) {
+  const ps = t.periodos;
+  const scrum = t.perfil.metodologia === "scrum";
+  const unidade = scrum ? "Sprints" : "Semanas (sáb–sex)";
+  const rot = ps.map(rotulo);
+  const L = (slide: string, placeholder?: string) => (
+    <Leitura deck={d.deck} time={t.perfil.time} slide={slide} inicial={d.leituras[chaveLeitura(t.perfil.time, slide)]} demo={d.demo} placeholder={placeholder} />
+  );
+  const Faixa = ({ slide }: { slide: string }) => <div className="faixa"><b>Leitura:</b>{L(slide)}</div>;
+  const rodape = `${t.perfil.time} · Indicadores · Área TAP · Grupo Salta Educação`;
+  const medianaPts = percentil(ps.map((p) => p.ptsSdd), 0.5);
+  const intervalo = ps.length ? `${rotulo(ps[0])} a ${rotulo(ps.at(-1)!)}` : "sem períodos coletados";
+
+  const capa = (
+    <Slide escuro key="capa" demo={d.demo}>
+      <div className="capa">
+        <div className="marca">TAP</div>
+        <div className="eyebrow" style={{ color: "var(--neon)", marginTop: 24 }}>{t.perfil.time.toUpperCase()} · {d.rotulo}</div>
+        <h1>{t.perfil.time}</h1>
+        <div className="linha-neon" />
+        <div className="sub" style={{ fontSize: 20 }}>{unidade}: {intervalo}</div>
+      </div>
+    </Slide>
+  );
+
+  if (!ps.length) {
+    return [capa, (
+      <Slide key="vazio" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="INDICADORES" titulo={`Sem dados coletados no ${d.rotulo}`} />
+        <div className="vazio">Nenhum período fechado deste time foi coletado no trimestre.</div>
+      </Slide>
+    )];
+  }
+
+  const linhasMatriz: [string, (p: Indicadores) => React.ReactNode][] = [
+    ...(scrum ? [
+      ["Entrega", (p: Indicadores) => <span className={`s-${corEntrega(p.entrega)}`}>{pct(p.entrega)}</span>],
+      ["Extras", (p: Indicadores) => <span className={`s-${corExtras(p.extras)}`}>{pct(p.extras)}</span>],
+    ] as [string, (p: Indicadores) => React.ReactNode][] : []),
+    ["Pontos COM SDD", (p) => <span className={`s-${corPontos(p.ptsSdd, medianaPts)}`}>{num(p.ptsSdd)}</span>],
+    ["Pontos SEM SDD", (p) => num(p.ptsSemSdd)],
+    ["Itens entregues", (p) => p.itensEntregues],
+    ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
+    ["Chamados resolvidos (N3)", (p) => `${p.chamados} (${p.chamadosN3})`],
+  ];
+  // Kanban tem muitas semanas: a matriz mostra as 8 mais recentes.
+  const psMatriz = ps.slice(-8);
+
+  const slides = [
+    capa,
+    <Slide key="matriz" rodape={rodape} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="INDICADORES" titulo={`${unidade} do ${d.rotulo}`} />
+      <table className="matriz">
+        <thead><tr><th>Indicador</th>{psMatriz.map((p) => <th key={p.periodo.periodo_id}>{rotulo(p)}</th>)}</tr></thead>
+        <tbody>
+          {linhasMatriz.map(([nome, f]) => (
+            <tr key={nome}><td>{nome}</td>{psMatriz.map((p) => <td key={p.periodo.periodo_id}>{f(p)}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="cards">
+        {[["c1", "Entrega e pontuação"], ["c2", "Fluxo"], ["c3", "Suporte"]].map(([k, titulo]) => (
+          <div className="card" key={k}><h4>{titulo}</h4>{L(`matriz-${k}`)}</div>
+        ))}
+      </div>
+    </Slide>,
+  ];
+
+  if (scrum) {
+    slides.push(
+      <Slide key="entrega" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="ENTREGA" titulo="Proporção de entrega em pontos" sub="Pontos planejados concluídos ÷ pontos planejados" />
+        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Entrega", valores: ps.map((p) => p.entrega) }]} formato={pct} referencia={{ valor: 1, rotulo: "100%" }} /></div>
+        <Faixa slide="entrega" />
+      </Slide>,
+    );
+  } else {
+    slides.push(
+      <Slide key="vazao" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="VAZÃO" titulo="Itens entregues por semana" sub="Janela sábado a sexta" />
+        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Itens entregues", valores: ps.map((p) => p.itensEntregues) }]} /></div>
+        <Faixa slide="vazao" />
+      </Slide>,
+    );
+  }
+
+  slides.push(
+    <Slide key="desempenho" rodape={rodape} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="DESEMPENHO" titulo="Desempenho por pontos" sub="Pontos concluídos COM SDD e SEM SDD" />
+      <div className="grafico"><Barras rotulos={rot} series={[{ nome: "COM SDD", valores: ps.map((p) => p.ptsSdd) }, { nome: "SEM SDD", valores: ps.map((p) => p.ptsSemSdd) }]} formato={num} /></div>
+      <Faixa slide="desempenho" />
+    </Slide>,
+    <Slide key="cycle" rodape={rodape} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub="Dias corridos do início do trabalho até Concluído · P50 e P85" />
+      <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#F57C00" }]} formato={num} /></div>
+      <Faixa slide="cycle" />
+    </Slide>,
+  );
+
+  if (scrum) {
+    slides.push(
+      <Slide key="comp-plan" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de planejamento" sub="Composição da sprint com base em seu planejamento" />
+        <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porPlanejamento")} /></div>
+        <Faixa slide="comp-plan" />
+      </Slide>,
+    );
+  }
+
+  slides.push(
+    <Slide key="comp-tipo" rodape={rodape} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de item" sub={`Comparativo entre ${unidade.toLowerCase()} do trimestre`} />
+      <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porTipo", TIPOS)} /></div>
+      <Faixa slide="comp-tipo" />
+    </Slide>,
+    <Slide key="roadmap" rodape={rodape} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="ROADMAP" titulo="Proporção dos pontos por categoria de roadmap" sub="Realizado (entrega)" />
+      <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porRoadmap")} /></div>
+      <Faixa slide="roadmap" />
+    </Slide>,
+    <Slide key="suporte" rodape={`${t.perfil.time} · Suporte · Área TAP · Grupo Salta Educação`} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="SUPORTE" titulo="Chamados resolvidos" sub={`Por nível · ${t.perfil.suporte.filter((f) => f.papel === "chamado").map((f) => f.projeto).join(", ")}`} />
+      <div className="grafico metade"><h3>Chamados por nível</h3>
+        <Barras largura={560} rotulos={rot} series={[
+          { nome: "N2", valores: ps.map((p) => p.chamados - p.chamadosN3) },
+          { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#F57C00" },
+          ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#0E1A15" }] : []),
+        ]} />
+      </div>
+      <div className="grafico metade"><h3>Tempo de resolução P50 (dias)</h3>
+        <Linhas largura={560} rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.resolucaoP50) }]} formato={num} />
+      </div>
+      <Faixa slide="suporte" />
+    </Slide>,
+    <Slide key="destaques" rodape={`${t.perfil.time} · Roadmap de Negócio · Área TAP · Grupo Salta Educação`} demo={d.demo}>
+      <Cabecalho t={t} eyebrow="ROADMAP DE NEGÓCIO" titulo="Destaques do roadmap" />
+      <div className="blocos">
+        <div className="bloco"><header>Atividades previstas para o {d.rotulo}</header>{L("destaques-principal", "Liste as atividades previstas…")}</div>
+        <div className="bloco"><header>Destaque</header>{L("destaques-1")}</div>
+        <div className="bloco"><header>Destaque</header>{L("destaques-2")}</div>
+      </div>
+    </Slide>,
+  );
+  return slides;
+}
+
+export default async function Apresentacao({ searchParams }: { searchParams: Busca }) {
+  const q = await searchParams;
+  const deck = q.trimestre ?? trimestreAtual();
+  const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
+  const demo = q.demo === "1" || (!process.env.NETLIFY_DATABASE_URL && !process.env.DATABASE_URL);
+  const d = demo ? deckDemo(deck, projetos) : await carregarDeck(deck, projetos);
+
+  return (
+    <div className={fonte.className}>
+      <Deck>
+        <Slide escuro key="abertura" demo={d.demo}>
+          <div className="capa">
+            <div className="marca">TAP</div>
+            <h1 style={{ marginTop: 24 }}>Sync de Agilidade</h1>
+            <div className="linha-neon" />
+            <div className="sub">{d.rotulo}</div>
+            <div className="times">{d.times.map((t) => t.perfil.time).join("   ·   ")}</div>
+          </div>
+        </Slide>
+        {d.times.flatMap((t) => slidesDoTime(d, t))}
+        <Slide escuro key="fim" demo={d.demo}>
+          <div className="capa"><div className="marca">TAP</div><h1 style={{ marginTop: 24 }}>Obrigado!</h1><div className="linha-neon" /></div>
+        </Slide>
+      </Deck>
+    </div>
+  );
+}

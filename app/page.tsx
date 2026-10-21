@@ -38,7 +38,7 @@ export default async function Pagina() {
   return (
     <main>
       <h1>Métricas da TAP</h1>
-      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa.</p>
+      <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. · <a href="/apresentacao">Modo apresentação</a></p>
       <div className="grid">
         {PERFIS.map((perfil) => {
           const r = resumos.find((x) => x.time === perfil.time);

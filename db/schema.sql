@@ -63,3 +63,13 @@ create table if not exists coletas (
 );
 
 create index if not exists coletas_time_periodo on coletas (time, periodo_id);
+
+-- Textos de leitura escritos pelo agilista em cada slide do modo apresentação.
+create table if not exists leituras (
+  deck          text not null,          -- ex.: '2026-Q4'
+  time          text not null,
+  slide         text not null,          -- ex.: 'entrega', 'destaques'
+  texto         text not null,
+  atualizado_em timestamptz not null default now(),
+  primary key (deck, time, slide)
+);

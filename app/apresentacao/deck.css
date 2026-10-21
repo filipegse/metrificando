@@ -1,0 +1,65 @@
+/* Identidade da Sync de Agilidade (ver sync-agilidade-deck/references/layout.md). */
+.deck {
+  --ink: #13211B; --green: #04A15C; --dgreen: #2E7D32; --neon: #00FA87; --dark: #0E1A15;
+  --orange: #F57C00; --red: #C62828; --gray: #666666; --soft: #F3F7F4; --border: #E2EAE5;
+  --muted: #6C7B73; --mist: #9DB3A8; --body: #33413A;
+  position: fixed; inset: 0; background: #0b0f0d; font-family: "Work Sans", system-ui, sans-serif; overflow: hidden;
+}
+.palco { position: absolute; inset: 0 0 40px 0; display: grid; place-items: center; }
+.moldura { grid-area: 1 / 1; width: 1280px; height: 720px; transform-origin: center; display: none; }
+.moldura.ativo { display: block; }
+.slide { position: relative; width: 1280px; height: 720px; background: #fff; color: var(--ink); overflow: hidden; padding: 48px 60px 0; }
+.slide.escuro { background: var(--dark); color: #fff; }
+.eyebrow { font-size: 15px; font-weight: 700; color: var(--green); letter-spacing: .04em; text-transform: uppercase; }
+.slide h1 { font-size: 40px; margin: 6px 0 0; line-height: 1.1; }
+.slide .subtitulo { font-size: 16px; color: var(--muted); margin-top: 8px; }
+.rodape { position: absolute; left: 60px; bottom: 18px; font-size: 11px; color: var(--muted); }
+.escuro .rodape { color: var(--mist); }
+.marca { font-weight: 800; color: var(--neon); letter-spacing: .08em; font-size: 18px; }
+.capa { display: flex; flex-direction: column; justify-content: center; height: 100%; padding-bottom: 60px; }
+.capa h1 { font-size: 72px; }
+.capa .linha-neon { width: 120px; height: 6px; background: var(--neon); margin: 24px 0; }
+.capa .sub { font-size: 26px; color: var(--neon); font-weight: 700; }
+.capa .times { font-size: 20px; margin-top: 28px; color: #fff; }
+.grafico { position: absolute; left: 60px; right: 60px; top: 170px; height: 400px; }
+.grafico.metade { right: auto; width: 565px; }
+.grafico.metade + .grafico.metade { left: 655px; }
+.grafico h3 { font-size: 14px; color: var(--muted); margin: 0 0 4px; font-weight: 600; }
+.faixa { position: absolute; left: 60px; right: 60px; bottom: 50px; background: var(--soft); border-radius: 8px; padding: 10px 16px; display: flex; gap: 10px; align-items: flex-start; }
+.faixa b { color: var(--green); font-size: 14px; padding-top: 6px; white-space: nowrap; }
+.leitura { flex: 1; position: relative; }
+.leitura textarea { width: 100%; border: 0; background: transparent; font: inherit; font-size: 15px; color: var(--body); resize: none; outline: none; line-height: 1.4; }
+.leitura textarea::placeholder { color: var(--mist); }
+.leitura .estado { position: absolute; right: 0; bottom: -14px; font-size: 10px; color: var(--muted); }
+.leitura .estado.erro { color: var(--red); }
+table.matriz { position: absolute; left: 60px; top: 150px; width: 1160px; table-layout: fixed; border-collapse: collapse; font-size: 15px; }
+.matriz th:first-child, .matriz td:first-child { width: 250px; }
+.matriz th { background: var(--dark); color: #fff; padding: 8px; font-weight: 600; }
+.matriz th:first-child { text-align: left; }
+.matriz td { padding: 7px 8px; text-align: center; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
+.matriz td:first-child { text-align: left; font-weight: 700; }
+.matriz tr:nth-child(even) td { background: var(--soft); }
+.s-bom { color: var(--dgreen); font-weight: 700; } .s-atencao { color: var(--orange); font-weight: 700; }
+.s-ruim { color: var(--red); font-weight: 700; } .s-neutro { color: var(--gray); }
+.cards { position: absolute; left: 60px; right: 60px; bottom: 46px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.card h4 { margin: 0 0 4px; font-size: 15px; }
+.blocos { position: absolute; left: 60px; right: 60px; top: 150px; bottom: 50px; display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
+.bloco { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.bloco:first-child { grid-row: 1 / 3; }
+.bloco header { background: var(--dark); color: #fff; text-align: center; font-weight: 700; padding: 10px; font-size: 16px; }
+.bloco .leitura { padding: 12px 14px; } .bloco textarea { height: 100%; }
+.selo-demo { position: absolute; right: 60px; top: 48px; background: var(--orange); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.controles { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; align-items: center; gap: 14px; padding: 0 16px; color: var(--mist); font-size: 13px; }
+.controles button { background: none; border: 1px solid #2a3a33; color: #fff; border-radius: 6px; width: 30px; height: 26px; cursor: pointer; font-size: 18px; line-height: 1; }
+.controles .dica { margin-left: auto; }
+.progresso { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--neon); transition: width .2s; }
+.vazio { position: absolute; left: 60px; right: 60px; top: 220px; text-align: center; color: var(--muted); font-size: 20px; }
+
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  .deck { position: static; background: #fff; }
+  .palco { position: static; display: block; }
+  .moldura { display: block !important; transform: none !important; page-break-after: always; break-after: page; }
+  .controles, .progresso, .leitura .estado { display: none; }
+}
