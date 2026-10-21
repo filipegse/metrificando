@@ -32,8 +32,28 @@ describe("associação ao período", () => {
   ];
   it("sprint com fim mais próximo da data", () => expect(periodoDoHealthCheck("2026-06-02", sprints)).toBe("61"));
   it("fora da tolerância não associa", () => expect(periodoDoHealthCheck("2026-07-01", sprints)).toBeNull());
+  it("número da sprint no título tem prioridade sobre a data", () => {
+    const comNome = [
+      { ...sprints[0], nome: "TRG 108" },
+      { ...sprints[1], nome: "TRG 109" },
+    ];
+    expect(periodoDoHealthCheck("2026-06-02", comNome, "Retaguarda 108")).toBe("60");
+    expect(periodoDoHealthCheck("2026-06-02", comNome, "Sprint 109 - 14/09 - 25/09")).toBe("61");
+  });
   it("Kanban: semana que contém a data", () => {
     const semanas = [{ periodo_id: "2026-10-17", tipo: "semana", inicio: "2026-10-17T03:00:00Z", fim: "2026-10-24T02:59:59Z" }];
     expect(periodoDoHealthCheck("2026-10-20", semanas)).toBe("2026-10-17");
+  });
+});
+
+describe("time compartilhado no TeamRetro", async () => {
+  const { perfilPorProjeto } = await import("../src/config/perfis");
+  it("separa Retaguarda, Contas a Pagar e X-Retaguarda pelo título", () => {
+    const trg = perfilPorProjeto("TRG")!.teamRetroTitulo!, cf = perfilPorProjeto("CF")!.teamRetroTitulo!;
+    expect(trg.test("Retaguarda 109")).toBe(true);
+    expect(trg.test("Sprint 108 - 14/09 - 25/09")).toBe(true);
+    expect(trg.test("X-Reta | 131")).toBe(false);
+    expect(cf.test("Fluig 82")).toBe(true);
+    expect(cf.test("Retaguarda 109")).toBe(false);
   });
 });

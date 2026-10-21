@@ -12,6 +12,7 @@ export const DIMENSOES = {
 
 export type HealthCheck = {
   id: string;
+  title?: string;
   date: string;
   status: string;
   healthModel: { id: string; maxRating: number };
@@ -50,7 +51,7 @@ export function saudeDe(hc: HealthCheck): Saude {
   };
 }
 
-type PeriodoRef = { periodo_id: string; tipo: string; inicio: string; fim: string };
+type PeriodoRef = { periodo_id: string; tipo: string; inicio: string; fim: string; nome?: string | null };
 
 const DIA = 24 * 60 * 60 * 1000;
 export const TOLERANCIA_DIAS = 7;
@@ -60,7 +61,13 @@ export const TOLERANCIA_DIAS = 7;
  * Sprint: a sprint cujo fim está mais próximo da data do health check (até 7 dias).
  * Semana Kanban: a janela que contém a data.
  */
-export function periodoDoHealthCheck(data: string, periodos: PeriodoRef[]): string | null {
+export function periodoDoHealthCheck(data: string, periodos: PeriodoRef[], titulo?: string): string | null {
+  // Número da sprint no título ("Retaguarda 109", "Fluig 82", "Sprint 108 - …") tem prioridade sobre a data.
+  const n = titulo?.match(/(\d{2,})/)?.[1];
+  if (n) {
+    const porNumero = periodos.find((p) => p.tipo === "sprint" && new RegExp(`(^|\\D)${n}(\\D|$)`).test(p.nome ?? ""));
+    if (porNumero) return porNumero.periodo_id;
+  }
   const t = new Date(`${data}T12:00:00-03:00`).getTime();
   const semana = periodos.find((p) => p.tipo === "semana" && t >= new Date(p.inicio).getTime() && t <= new Date(p.fim).getTime());
   if (semana) return semana.periodo_id;

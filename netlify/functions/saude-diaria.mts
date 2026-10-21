@@ -16,10 +16,11 @@ export default async () => {
   const dia = (d: Date) => d.toISOString().slice(0, 10);
   for (const perfil of PERFIS.filter((p) => p.teamRetroId)) {
     const periodos = (await sql`
-      select periodo_id, tipo, inicio::text, fim::text from periodos
+      select periodo_id, tipo, nome, inicio::text, fim::text from periodos
       where time = ${perfil.time} and fim >= ${new Date(de.getTime() - 14 * 24 * 60 * 60 * 1000)}`) as any[];
-    for (const hc of await listarHealthChecks(perfil.teamRetroId!, dia(de), dia(ate))) {
-      const periodoId = periodoDoHealthCheck(hc.date, periodos);
+    const hcs = await listarHealthChecks(perfil.teamRetroId!, dia(de), dia(ate));
+    for (const hc of hcs.filter((h) => !perfil.teamRetroTitulo || perfil.teamRetroTitulo.test(h.title ?? ""))) {
+      const periodoId = periodoDoHealthCheck(hc.date, periodos, hc.title);
       if (!periodoId) continue;
       const s = saudeDe(hc);
       await sql`
