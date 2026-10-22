@@ -1,41 +1,69 @@
-// Tempo sem férias registradas: sinal de atenção quando se aproxima de 1 ano.
+// Situação de férias de funcionários (CLT): a cada 12 meses de casa (período aquisitivo) a pessoa ganha férias,
+// que devem ser tiradas nos 12 meses seguintes (período concessivo). Terceirizados não entram.
+//
+// Aviso: a partir do 22º mês de um período aquisitivo ainda sem férias (12 do aquisitivo + 10 do concessivo),
+// ou seja, faltando 2 meses para o fim do prazo. Crítico: prazo vencido (24 meses).
 
 export type AusenciaFerias = { pessoa_id: number; inicio: string; fim: string; tipo: string };
 export type SemFerias = {
-  /** Data de referência da contagem: fim das últimas férias até hoje ou, sem férias registradas, a entrada mais antiga. */
+  /** Início do período aquisitivo pendente. */
   desde: string;
-  dias: number;
+  /** Meses desde o início desse período aquisitivo. */
   meses: number;
+  dias: number;
   nivel: "ok" | "atencao" | "critico";
-  /** Férias já marcadas depois de hoje, se houver. */
+  /** Até quando as férias desse período precisam começar. */
+  prazo: string;
   proximas?: { inicio: string; fim: string };
   semRegistro: boolean;
   texto: string;
 };
 
-const DIA = 86400000;
+export const MES_AVISO = 22;
+export const MES_VENCIDO = 24;
+
 const br = (d: string) => d.split("-").reverse().join("/");
+function somaMeses(dia: string, meses: number): string {
+  const [a, m, d] = dia.split("-").map(Number);
+  const alvo = new Date(Date.UTC(a, m - 1 + meses, 1));
+  const ultimo = new Date(Date.UTC(alvo.getUTCFullYear(), alvo.getUTCMonth() + 1, 0)).getUTCDate();
+  alvo.setUTCDate(Math.min(d, ultimo));
+  return alvo.toISOString().slice(0, 10);
+}
+function mesesEntre(de: string, ate: string): number {
+  const [a1, m1, d1] = de.split("-").map(Number), [a2, m2, d2] = ate.split("-").map(Number);
+  return (a2 - a1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+}
 
-/** Atenção a partir de 10 meses sem férias; crítico a partir de 12. */
-export const MESES_ATENCAO = 10;
-export const MESES_CRITICO = 12;
+/**
+ * `admissao`: data em que a pessoa virou funcionária (contratação ou efetivação do terceirizado).
+ * Cada período aquisitivo k começa em admissão + 12k meses; ele é atendido se houver férias iniciadas
+ * no período concessivo correspondente [admissão + 12(k+1), admissão + 12(k+2)).
+ */
+export function tempoSemFerias(pessoaId: number, admissao: string | null, ausencias: AusenciaFerias[], hoje: string): SemFerias | null {
+  if (!admissao || admissao > hoje) return null;
+  const ferias = ausencias.filter((a) => a.pessoa_id === pessoaId && a.tipo === "Férias").sort((a, b) => a.inicio.localeCompare(b.inicio));
+  if (ferias.some((f) => f.inicio <= hoje && f.fim >= hoje)) return null; // de férias agora
+  const proximas = ferias.find((f) => f.inicio > hoje);
 
-export function tempoSemFerias(pessoaId: number, entrada: string | null, ausencias: AusenciaFerias[], hoje: string): SemFerias | null {
-  const ferias = ausencias.filter((a) => a.pessoa_id === pessoaId && a.tipo === "Férias");
-  // Férias em curso hoje: não há alerta.
-  if (ferias.some((f) => f.inicio <= hoje && f.fim >= hoje)) return null;
-  const passadas = ferias.filter((f) => f.fim < hoje).sort((a, b) => a.fim.localeCompare(b.fim));
-  const ultima = passadas.at(-1);
-  const desde = ultima?.fim ?? entrada;
-  if (!desde) return null;
-  const dias = Math.max(0, Math.round((Date.parse(`${hoje}T12:00:00Z`) - Date.parse(`${desde}T12:00:00Z`)) / DIA));
-  const meses = Math.floor(dias / 30.44);
-  const proximas = ferias.filter((f) => f.inicio > hoje).sort((a, b) => a.inicio.localeCompare(b.inicio))[0];
-  const nivel = meses >= MESES_CRITICO ? "critico" : meses >= MESES_ATENCAO ? "atencao" : "ok";
-  const tempo = meses >= 1 ? `${meses} ${meses === 1 ? "mês" : "meses"}` : `${dias} dias`;
-  const base = ultima
-    ? `Sem férias há ${tempo} (últimas terminaram em ${br(ultima.fim)}).`
-    : `Nenhuma férias registrada desde a entrada em ${br(desde)} (${tempo}).`;
-  const futuro = proximas ? ` Próximas férias marcadas: ${br(proximas.inicio)} a ${br(proximas.fim)}.` : " Sem férias futuras marcadas.";
-  return { desde, dias, meses, nivel, proximas: proximas && { inicio: proximas.inicio, fim: proximas.fim }, semRegistro: !ultima, texto: base + futuro };
+  // Primeiro período aquisitivo já completo e ainda sem férias no seu prazo.
+  for (let k = 0; ; k++) {
+    const aquisitivo = somaMeses(admissao, 12 * k);
+    const abre = somaMeses(admissao, 12 * (k + 1)), prazo = somaMeses(admissao, 12 * (k + 2));
+    if (abre > hoje) return null; // período ainda em aquisição: nada a cobrar
+    const atendido = ferias.some((f) => f.inicio >= abre && f.inicio < prazo);
+    if (atendido) continue;
+    const meses = mesesEntre(aquisitivo, hoje);
+    const dias = Math.round((Date.parse(hoje) - Date.parse(aquisitivo)) / 86400000);
+    const nivel = meses >= MES_VENCIDO ? "critico" : meses >= MES_AVISO ? "atencao" : "ok";
+    // Férias marcadas dentro do prazo já atendem o período (tratado acima); aqui só podem estar depois do prazo.
+    const situacao = nivel === "critico"
+      ? `Férias do período ${br(aquisitivo)}–${br(somaMeses(abre, 0))} vencidas desde ${br(prazo)}.`
+      : `Férias do período iniciado em ${br(aquisitivo)} ainda não tiradas (${meses} de 24 meses); prazo até ${br(prazo)}.`;
+    const futuro = proximas
+      ? ` Próximas férias marcadas: ${br(proximas.inicio)} a ${br(proximas.fim)}${proximas.inicio < prazo ? "" : " (depois do prazo)"}.`
+      : " Sem férias futuras marcadas.";
+    return { desde: aquisitivo, meses, dias, nivel, prazo, proximas: proximas && { inicio: proximas.inicio, fim: proximas.fim },
+      semRegistro: !ferias.some((f) => f.inicio <= hoje), texto: situacao + futuro };
+  }
 }

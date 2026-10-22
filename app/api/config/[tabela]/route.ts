@@ -18,9 +18,9 @@ export async function GET(_: Request, { params }: Ctx) {
       return Response.json(await sql`select data::text, nome, abrangencia from feriados order by data`);
     case "pessoas":
       return Response.json(await sql`
-        select p.id, p.nome, p.vinculo, coalesce(json_agg(json_build_object('id', a.id, 'time', a.time, 'frente', a.frente, 'cargo', a.cargo,
+        select p.id, p.nome, p.vinculo, p.admissao::text as admissao, coalesce(json_agg(json_build_object('id', a.id, 'time', a.time, 'frente', a.frente, 'cargo', a.cargo,
           'percentual', a.percentual, 'inicio', a.inicio::text, 'fim', a.fim::text) order by a.inicio) filter (where a.id is not null), '[]') as alocacoes
-        from pessoas p left join alocacoes a on a.pessoa_id = p.id group by p.id, p.nome, p.vinculo order by p.nome`);
+        from pessoas p left join alocacoes a on a.pessoa_id = p.id group by p.id, p.nome, p.vinculo, p.admissao order by p.nome`);
     case "ausencias":
       return Response.json(await sql`select a.id, a.pessoa_id, p.nome, a.inicio::text, a.fim::text, a.tipo from ausencias a join pessoas p on p.id = a.pessoa_id order by a.inicio desc`);
     default:
@@ -52,8 +52,10 @@ export async function POST(req: Request, { params }: Ctx) {
       if (!b.nome?.trim()) return erro("informe o nome");
       const vinculo = b.vinculo === "terceirizado" ? "terceirizado" : "funcionario";
       // Pessoa nova recebe o vínculo informado; pessoa existente só muda o vínculo se ele vier no formulário.
-      const [p] = (await sql`insert into pessoas (nome, vinculo) values (${b.nome.trim()}, ${vinculo}) on conflict (nome)
-        do update set vinculo = case when ${!!b.vinculo} then excluded.vinculo else pessoas.vinculo end returning id`) as { id: number }[];
+      const admissao = vinculo === "funcionario" ? b.admissao || null : null;
+      const [p] = (await sql`insert into pessoas (nome, vinculo, admissao) values (${b.nome.trim()}, ${vinculo}, ${admissao}) on conflict (nome)
+        do update set vinculo = case when ${!!b.vinculo} then excluded.vinculo else pessoas.vinculo end,
+          admissao = coalesce(excluded.admissao, pessoas.admissao) returning id`) as { id: number }[];
       if (b.time && b.cargo && b.inicio) {
         await sql`insert into alocacoes (pessoa_id, time, frente, cargo, percentual, inicio, fim)
           values (${p.id}, ${b.time}, ${b.frente ?? ""}, ${b.cargo}, ${b.percentual ?? 1}, ${b.inicio}, ${b.fim || null})`;
@@ -61,8 +63,10 @@ export async function POST(req: Request, { params }: Ctx) {
       break;
     }
     case "vinculo":
+      // Efetivação (terceirizado → funcionário) exige a data: é o início da contagem de férias.
       if (!b.id || !["funcionario", "terceirizado"].includes(b.vinculo)) return erro("informe a pessoa e o vínculo");
-      await sql`update pessoas set vinculo = ${b.vinculo} where id = ${b.id}`;
+      if (b.vinculo === "funcionario" && !b.admissao) return erro("informe a data em que a pessoa passou a ser funcionária");
+      await sql`update pessoas set vinculo = ${b.vinculo}, admissao = ${b.vinculo === "funcionario" ? b.admissao : null} where id = ${b.id}`;
       break;
     case "alocacoes":
       if (!b.id || !b.fim) return erro("informe a alocação e a data de saída");

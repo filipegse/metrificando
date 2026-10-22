@@ -5,7 +5,7 @@ import { tempoSemFerias, type SemFerias } from "@/lib/ferias";
 import { Icone } from "../componentes/Icone";
 
 type Alocacao = { time: string; frente: string; cargo: string; inicio: string; fim: string | null };
-type Pessoa = { id: number; nome: string; vinculo?: string; alocacoes: Alocacao[] };
+type Pessoa = { id: number; nome: string; vinculo?: string; admissao?: string | null; alocacoes: Alocacao[] };
 type Ausencia = { id: number; pessoa_id: number; inicio: string; fim: string; tipo: string };
 type Feriado = { data: string; nome: string; abrangencia: string };
 
@@ -58,10 +58,13 @@ export function Gantt({ pessoas, ausencias, feriados, times }: { pessoas: Pessoa
   const fora = useMemo(() => ausencias.filter((a) => a.fim < de || a.inicio > ate).sort((a, b) => a.inicio.localeCompare(b.inicio)), [ausencias, de, ate]);
   const proximaFora = fora.find((a) => a.inicio > ate) ?? fora.at(-1);
 
-  // Tempo sem férias de cada pessoa (referência: hoje), a partir da entrada mais antiga registrada.
+  // Situação de férias (referência: hoje). Só funcionários; a contagem parte de "funcionário desde"
+  // (sem a data, usa a primeira alocação e avisa no tooltip). Terceirizados não têm alerta.
   const semFerias = useMemo(() => new Map(pessoas.map((p) => {
-    const entrada = p.alocacoes.map((a) => a.inicio).sort()[0] ?? null;
-    return [p.id, tempoSemFerias(p.id, entrada, ausencias, hojeIso)] as const;
+    if (p.vinculo === "terceirizado") return [p.id, null] as const;
+    const base = p.admissao ?? p.alocacoes.map((a) => a.inicio).sort()[0] ?? null;
+    const r = tempoSemFerias(p.id, base, ausencias, hojeIso);
+    return [p.id, r && !p.admissao ? { ...r, texto: `${r.texto} (Data de "funcionário desde" não informada: contando da primeira alocação.)` } : r] as const;
   })), [pessoas, ausencias, hojeIso]);
 
   const col = (s: string) => Math.round((dia(s) - dia(de)) / DIA);
@@ -94,8 +97,8 @@ export function Gantt({ pessoas, ausencias, feriados, times }: { pessoas: Pessoa
         <span className="legenda-gantt">
           {Object.entries(COR_TIPO).map(([t, c]) => <span key={t}><i style={{ background: c }} />{t}</span>)}
           <span><i className="feriado" />Feriado</span>
-          <span><i className="alerta-ferias" />10+ meses sem férias</span>
-          <span><i className="critico-ferias" />12+ meses sem férias</span>
+          <span><i className="alerta-ferias" />Férias a marcar (mês 22+)</span>
+          <span><i className="critico-ferias" />Férias vencidas (mês 24+)</span>
         </span>
       </div>
       {fora.length > 0 && proximaFora && (
@@ -144,7 +147,7 @@ function Grupo({ time, lista, dias, fundoDia, feriadoDe, ausencias, de, ate, col
         return (
         <div key={pessoa.id} className={`g-linha ${nivel ? `ferias-${nivel}` : ""}`} style={{ gridColumn: `1 / span ${dias.length + 1}`, gridTemplateColumns: "subgrid" }}>
           <div className="g-nome" style={{ gridColumn: 1, gridRow: 1 }} title={dica}>
-            <b>{pessoa.nome}{nivel && <span className="selo-ferias" aria-label={sf!.texto}><Icone nome="alerta" tamanho={13} /> {sf!.meses}m</span>}</b>
+            <b>{pessoa.nome}{nivel && <span className="selo-ferias" aria-label={sf!.texto}><Icone nome="alerta" tamanho={13} /> {nivel === "critico" ? "vencidas" : `${sf!.meses} meses`}</span>}</b>
             <span>{cargo}{frente ? ` · ${frente}` : ""}{pessoa.vinculo === "terceirizado" ? " · terceirizado" : ""}</span>
           </div>
           {dias.map((d, i) => <div key={d} className={`g-cel ${fundoDia(d)}`} style={{ gridColumn: i + 2, gridRow: 1 }} title={feriadoDe.get(d)?.nome} />)}

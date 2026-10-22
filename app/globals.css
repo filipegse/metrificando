@@ -207,3 +207,4 @@ table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
 .legenda-tabela select { margin-left: var(--e-2); }
 main select.vinculo { min-height: 30px; padding: 3px 26px 3px 8px; font-size: var(--t-xs); border-radius: var(--r-pill); }
 main select.vinculo.terceirizado { background: color-mix(in srgb, var(--roxo) 12%, var(--card)); border-color: color-mix(in srgb, var(--roxo) 40%, var(--line-forte)); }
+main input.data-compacta { min-height: 30px; padding: 3px 6px; font-size: var(--t-xs); }

@@ -6,7 +6,7 @@ import { Gantt } from "./Gantt";
 type Expediente = { valido_de: string; inicio: string; fim: string };
 type Feriado = { data: string; nome: string; abrangencia: string };
 type Alocacao = { id: number; time: string; frente: string; cargo: string; percentual: number; inicio: string; fim: string | null };
-type Pessoa = { id: number; nome: string; vinculo: "funcionario" | "terceirizado"; alocacoes: Alocacao[] };
+type Pessoa = { id: number; nome: string; vinculo: "funcionario" | "terceirizado"; admissao: string | null; alocacoes: Alocacao[] };
 const VINCULOS = { funcionario: "Funcionário", terceirizado: "Terceirizado" } as const;
 type Ausencia = { id: number; pessoa_id: number; nome: string; inicio: string; fim: string; tipo: string };
 
@@ -41,6 +41,7 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
   const [anoFeriados, setAnoFeriados] = useState(new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0));
   const [anoFiltro, setAnoFiltro] = useState<string>(String(new Date().getFullYear()));
   const [anoAus, setAnoAus] = useState("");
+  const [vinculoForm, setVinculoForm] = useState<"funcionario" | "terceirizado">("funcionario");
 
   const recarregar = useCallback(async () => {
     try {
@@ -80,7 +81,8 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
           <form className="linha-form" onSubmit={enviar("pessoas", "Alocação salva.", (v) => ({ ...v, percentual: Number(v.percentual) / 100 }))}>
             <label>Pessoa <input name="nome" placeholder="Nome" required list="nomes" /></label>
             <datalist id="nomes">{pes.map((p) => <option key={p.id} value={p.nome} />)}</datalist>
-            <label>Vínculo <select name="vinculo" defaultValue="funcionario">{Object.entries(VINCULOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+            <label>Vínculo <select name="vinculo" value={vinculoForm} onChange={(e) => setVinculoForm(e.target.value as typeof vinculoForm)}>{Object.entries(VINCULOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+            {vinculoForm === "funcionario" && <label title="Contratação, ou efetivação se veio de terceirizado. Início da contagem de férias.">Funcionário desde <input name="admissao" type="date" /></label>}
             <label>Cargo <select name="cargo" required>{CARGOS.map((c) => <option key={c}>{c}</option>)}</select></label>
             <label>Time <select name="time" value={timeForm} onChange={(e) => setTimeForm(e.target.value)}>{times.map((t) => <option key={t.time}>{t.time}</option>)}</select></label>
             <label>Frente <select name="frente"><option value="">Time inteiro</option>{frentesDo(timeForm).map((f) => <option key={f}>{f}</option>)}</select></label>
@@ -90,17 +92,27 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
             <button className="botao"><Icone nome="mais" tamanho={16} /> Adicionar</button>
           </form>
           <table>
-            <thead><tr><th>Pessoa</th><th>Vínculo</th><th>Cargo</th><th>Time / frente</th><th className="n">Alocação</th><th>Entrada</th><th>Saída</th><th /></tr></thead>
+            <thead><tr><th>Pessoa</th><th>Vínculo</th><th title="Contratação ou efetivação: início da contagem de férias">Funcionário desde</th><th>Cargo</th><th>Time / frente</th><th className="n">Alocação</th><th>Entrada</th><th>Saída</th><th /></tr></thead>
             <tbody>
               {pes.flatMap((p) => (p.alocacoes.length ? p.alocacoes : [null]).map((a, i) => (
                 <tr key={`${p.id}-${a?.id ?? "x"}`} className={a?.fim && a.fim < hoje() ? "encerrada" : ""}>
                   <td>{i === 0 ? p.nome : ""}</td>
                   <td>{i === 0 && (
                     <select className={`vinculo ${p.vinculo}`} value={p.vinculo} aria-label={`Vínculo de ${p.nome}`}
-                      onChange={(e) => executar(() => api("vinculo", "POST", { id: p.id, vinculo: e.target.value }), `Vínculo de ${p.nome} atualizado.`)()}>
+                      onChange={(e) => {
+                        const vinculo = e.target.value;
+                        // Efetivação: pede a data em que passou a ser funcionário (início da contagem de férias).
+                        const admissao = vinculo === "funcionario" ? prompt(`Data em que ${p.nome} passou a ser funcionário (AAAA-MM-DD)`, hoje()) : null;
+                        if (vinculo === "funcionario" && !admissao) return;
+                        executar(() => api("vinculo", "POST", { id: p.id, vinculo, admissao }), `Vínculo de ${p.nome} atualizado.`)();
+                      }}>
                       {Object.entries(VINCULOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   )}</td>
+                  <td>{i === 0 && p.vinculo === "funcionario" && (
+                    <input type="date" className="data-compacta" value={p.admissao ?? ""} aria-label={`Funcionário desde (${p.nome})`}
+                      onChange={(e) => e.target.value && executar(() => api("vinculo", "POST", { id: p.id, vinculo: "funcionario", admissao: e.target.value }), `Data de ${p.nome} atualizada.`)()} />
+                  )}{i === 0 && p.vinculo === "terceirizado" && <span className="sub">—</span>}</td>
                   <td>{a?.cargo ?? "—"}</td>
                   <td>{a ? `${a.time}${a.frente ? ` · ${a.frente}` : ""}` : "sem alocação"}</td>
                   <td className="n">{a ? `${Math.round(a.percentual * 100)}%` : ""}</td>

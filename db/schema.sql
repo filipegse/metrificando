@@ -195,3 +195,7 @@ create index if not exists historico_auditoria_time on historico_auditoria (time
 alter table pessoas add column if not exists vinculo text not null default 'funcionario';
 alter table pessoas drop constraint if exists pessoas_vinculo_check;
 alter table pessoas add constraint pessoas_vinculo_check check (vinculo in ('funcionario', 'terceirizado'));
+
+-- Data em que a pessoa passou a ser funcionária (contratação direta ou efetivação de terceirizado):
+-- ponto de partida da contagem de férias. Terceirizados ficam sem data.
+alter table pessoas add column if not exists admissao date;
