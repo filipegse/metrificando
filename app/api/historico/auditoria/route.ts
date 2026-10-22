@@ -2,6 +2,10 @@
 import { db } from "@/lib/db";
 import { diferencas, linhaAtual, sqlAuditar, sqlGravar, usuarioDe, type Linha } from "@/lib/historico";
 
+// Dados mudam a cada gravação: nunca servir resposta em cache (navegador, CDN ou Next).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type Registro = { id: number; quando: string; usuario: string; acao: string; time: string; frente: string; nome: string;
   antes: Linha | null; depois: Linha | null; revertida_em: string | null; revertida_por: string | null; reverte_id: number | null };
 

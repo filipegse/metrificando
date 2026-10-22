@@ -2,6 +2,10 @@
 import { db } from "@/lib/db";
 import { CAMPOS_EDITAVEIS, linhaAtual, linhasDoTime, sqlAuditar, sqlGravar, usuarioDe, type Chave, type Linha } from "@/lib/historico";
 
+// Dados mudam a cada gravação: nunca servir resposta em cache (navegador, CDN ou Next).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const erro = (msg: string, status = 400) => Response.json({ erro: msg }, { status });
 const chaveValida = (c: (Partial<Chave> & Record<string, unknown>) | undefined): c is Chave & Record<string, unknown> => !!c?.time && typeof c.frente === "string" && !!c.nome;
 

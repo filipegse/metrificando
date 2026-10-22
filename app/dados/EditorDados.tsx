@@ -69,8 +69,8 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
     setCarregando(true);
     try {
       const [l, a] = await Promise.all([
-        fetch(`/api/historico/linhas?time=${encodeURIComponent(time)}`).then((r) => r.json()),
-        fetch(`/api/historico/auditoria?time=${encodeURIComponent(time)}`).then((r) => r.json()),
+        fetch(`/api/historico/linhas?time=${encodeURIComponent(time)}`, { cache: "no-store" }).then((r) => r.json()),
+        fetch(`/api/historico/auditoria?time=${encodeURIComponent(time)}`, { cache: "no-store" }).then((r) => r.json()),
       ]);
       setLinhas(Array.isArray(l) ? l : []); setAuditoria(Array.isArray(a) ? a : []); setRascunho({});
     } catch (e) { setMsg(`Não foi possível carregar: ${(e as Error).message}`); }

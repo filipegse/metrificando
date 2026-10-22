@@ -4,6 +4,10 @@ import type { LinhaHistorico } from "@/lib/importacao";
 import { sqlAuditar, usuarioDe, type Linha } from "@/lib/historico";
 import { VERSAO_MAPA } from "@/lib/importacao";
 
+// Dados mudam a cada gravação: nunca servir resposta em cache (navegador, CDN ou Next).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const COLUNAS = ["entrega", "extras", "pts_sdd", "esforco_sdd", "pts_sem_sdd", "esforco_sem_sdd", "ganho_sdd",
   "itens_entregues", "cycle_p50", "cycle_p85", "produtividade", "motivacao"] as const;
 

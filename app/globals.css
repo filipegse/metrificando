@@ -192,3 +192,18 @@ table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
 .legenda-gantt { display: flex; flex-wrap: wrap; gap: var(--e-3); font-size: var(--t-xs); color: var(--muted); }
 .legenda-gantt i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .legenda-gantt i.feriado { background: color-mix(in srgb, var(--rosa) 40%, white); }
+
+/* Alerta de tempo sem férias (≥ 10 meses atenção, ≥ 12 crítico) */
+.g-linha.ferias-atencao .g-nome { background: color-mix(in srgb, var(--ambar) 22%, var(--card)); box-shadow: inset 3px 0 0 var(--ambar); }
+.g-linha.ferias-critico .g-nome { background: color-mix(in srgb, var(--alerta) 18%, var(--card)); box-shadow: inset 3px 0 0 var(--alerta); }
+.g-linha.ferias-atencao .g-cel:not(.feriado):not(.fds) { background: color-mix(in srgb, var(--ambar) 6%, var(--card)); }
+.g-linha.ferias-critico .g-cel:not(.feriado):not(.fds) { background: color-mix(in srgb, var(--alerta) 6%, var(--card)); }
+.g-nome b { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.selo-ferias { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: var(--r-pill); color: #000; background: var(--ambar); }
+.ferias-critico .selo-ferias { background: var(--alerta); color: #fff; }
+.legenda-gantt i.alerta-ferias { background: var(--ambar); } .legenda-gantt i.critico-ferias { background: var(--alerta); }
+.msg.aviso { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; background: color-mix(in srgb, var(--ambar) 18%, var(--card)); margin-bottom: var(--e-3); }
+.legenda-tabela { caption-side: top; text-align: left; padding: 0 0 var(--e-2); color: var(--muted); font-size: var(--t-sm); }
+.legenda-tabela select { margin-left: var(--e-2); }
+main select.vinculo { min-height: 30px; padding: 3px 26px 3px 8px; font-size: var(--t-xs); border-radius: var(--r-pill); }
+main select.vinculo.terceirizado { background: color-mix(in srgb, var(--roxo) 12%, var(--card)); border-color: color-mix(in srgb, var(--roxo) 40%, var(--line-forte)); }

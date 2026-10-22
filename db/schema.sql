@@ -190,3 +190,8 @@ create table if not exists historico_auditoria (
   reverte_id    bigint references historico_auditoria (id)
 );
 create index if not exists historico_auditoria_time on historico_auditoria (time, quando desc);
+
+-- Vínculo da pessoa com a empresa.
+alter table pessoas add column if not exists vinculo text not null default 'funcionario';
+alter table pessoas drop constraint if exists pessoas_vinculo_check;
+alter table pessoas add constraint pessoas_vinculo_check check (vinculo in ('funcionario', 'terceirizado'));
