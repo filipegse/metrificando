@@ -19,22 +19,22 @@ export const AUXILIARES: Campo[] = ["prod_coletiva", "prod_individual", "mot_col
 export type DefCampo = { campo: Campo; rotulo: string; tipo: "texto" | "data" | "numero" | "fracao" | "escala"; apelidos: string[]; exatos?: string[]; grupo?: Grupo };
 export const CAMPOS: DefCampo[] = [
   { campo: "time", rotulo: "Time / frente", tipo: "texto", apelidos: ["time", "squad", "time ou frente", "frente"] },
-  { campo: "nome", rotulo: "Sprint / ciclo", tipo: "texto", apelidos: ["sprint", "nome da sprint", "ciclo", "nome do ciclo"] },
-  { campo: "inicio", rotulo: "Início", tipo: "data", apelidos: ["data inicio", "inicio", "data de inicio", "inicio da sprint", "inicio do ciclo"] },
+  { campo: "nome", rotulo: "Sprint / ciclo", tipo: "texto", apelidos: ["sprint", "nome da sprint", "ciclo", "nome do ciclo"], exatos: ["semana", "quinzena"] },
+  { campo: "inicio", rotulo: "Início", tipo: "data", apelidos: ["data inicio", "inicio", "data de inicio", "inicio da sprint", "inicio do ciclo"], exatos: ["semana inicio", "quinzena inicio"] },
   { campo: "fim", rotulo: "Fim", tipo: "data", apelidos: ["data fim", "fim", "data de fim", "fim da sprint", "fim do ciclo", "data final"] },
   { campo: "entrega", rotulo: "Entrega %", tipo: "fracao", apelidos: ["% entrega", "entrega %", "proporcao de entrega"], exatos: ["entrega", "eficiencia media %", "eficiencia media"] },
   { campo: "extras", rotulo: "Extras %", tipo: "fracao", apelidos: ["% extras", "% extra", "extras %"], exatos: ["extras", "acrescimo %", "acrescimo"] },
-  { campo: "pts_sdd", rotulo: "Pontos concluídos COM SDD (CC)", tipo: "numero", apelidos: ["qtd pontos concluidos com sdd", "pontos concluidos com sdd"], exatos: ["qtd pontos concluidos"] },
+  { campo: "pts_sdd", rotulo: "Pontos concluídos COM SDD (CC)", tipo: "numero", apelidos: ["qtd pontos concluidos com sdd", "pontos concluidos com sdd"], exatos: ["qtd pontos concluidos", "story points"] },
   { campo: "esforco_sdd", rotulo: "Pontos de esforço COM SDD (CD)", tipo: "numero", apelidos: ["qtd pontos de esforco com sdd", "pontos de esforco com sdd"] },
-  { campo: "pts_sem_sdd", rotulo: "Pontos concluídos SEM SDD (CJ)", tipo: "numero", apelidos: ["qtd pontos concluidos sem sdd", "pontos concluidos sem sdd"] },
+  { campo: "pts_sem_sdd", rotulo: "Pontos concluídos SEM SDD (CJ)", tipo: "numero", apelidos: ["qtd pontos concluidos sem sdd", "pontos concluidos sem sdd"], exatos: ["story points sem sdd"] },
   { campo: "esforco_sem_sdd", rotulo: "Pontos de esforço SEM SDD (CK)", tipo: "numero", apelidos: ["qtd pontos de esforco sem sdd", "pontos de esforco sem sdd"] },
   { campo: "ganho_sdd", rotulo: "Ganho SDD % (CL)", tipo: "fracao", apelidos: ["ganho sdd", "ganho de eficiencia sdd", "% ganho sdd", "ganho sdd %"] },
   // Primeiro apelido que existir vence: "sem suporte" tem prioridade (suporte não conta como item entregue).
-  { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["itens concluidos sem suporte", "qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"] },
+  { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["itens concluidos sem suporte", "qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"], exatos: ["itens"] },
   // Reserva quando "sem suporte" vem negativo (CF: suporte fora da sprint, a fórmula da planilha desconta mesmo assim).
   { campo: "itens_total", rotulo: "Itens concluídos (total, reserva)", tipo: "numero", apelidos: [], exatos: ["qtd itens concluidos"] },
   { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50"], exatos: ["tempo do ciclo", "tempo de ciclo"] },
-  { campo: "cycle_p85", rotulo: "Tempo de ciclo P85", tipo: "numero", apelidos: ["tempo do ciclo p85", "p85 tempo do ciclo", "cycle time p85", "tempo de ciclo p85"] },
+  { campo: "cycle_p85", rotulo: "Tempo de ciclo P85", tipo: "numero", apelidos: ["tempo do ciclo p85", "p85 tempo do ciclo", "cycle time p85", "tempo de ciclo p85"], exatos: ["p85 util dias", "p85 util h"] },
   { campo: "produtividade", rotulo: "Produtividade (geral)", tipo: "escala", apelidos: ["produtividade geral", "% produtividade"], exatos: ["produtividade"] },
   { campo: "motivacao", rotulo: "Motivação (geral)", tipo: "escala", apelidos: ["motivacao geral", "% motivacao"], exatos: ["motivacao"] },
   { campo: "prod_coletiva", rotulo: "Produtividade coletiva (1–5)", tipo: "escala", apelidos: ["produtividade coletiva"] },
@@ -53,7 +53,7 @@ for (const c of CATEGORIAS) for (const m of ["pts", "itens"] as const) {
 export { ROTULO_GRUPO };
 
 /** Sobe quando as regras de reconhecimento de colunas mudam (invalida mapeamentos salvos antes). */
-export const VERSAO_MAPA = 2;
+export const VERSAO_MAPA = 3;
 
 export const normalizar = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim();
@@ -137,6 +137,15 @@ export function detectarCabecalho(dados: string[][], max = 8): number {
 }
 
 /** "13/10/2026" ou "2026-10-13" → "2026-10-13". */
+/** Janela escrita no nome ("27/06–03/07/2026", "27/12–02/01/2027"): início e fim reais (sábado a sexta). */
+export function janelaDoNome(nome: string): { inicio: string; fim: string } | null {
+  const m = nome.match(/^(\d{1,2})\/(\d{1,2})\s*[–—-]\s*(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [, d1, m1, d2, m2, a] = m, p = (x: string) => x.padStart(2, "0");
+  const ano1 = Number(m1) > Number(m2) ? Number(a) - 1 : Number(a);
+  return { inicio: `${ano1}-${p(m1)}-${p(d1)}`, fim: `${a}-${p(m2)}-${p(d2)}` };
+}
+
 export function data(v: string | undefined): string | null {
   if (!v) return null;
   const br = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
@@ -161,6 +170,9 @@ export const SIGLAS: Record<string, { time: string; frente?: string }> = {
   ava: { time: "Nexus", frente: "Avaliações" }, avaliacoes: { time: "Nexus", frente: "Avaliações" },
   retaguarda: { time: "Retaguarda", frente: "Retaguarda" },
   "x retaguarda": { time: "Retaguarda", frente: "X-Retaguarda" }, "x reta": { time: "Retaguarda", frente: "X-Retaguarda" },
+  // Planilha Kanban (TAP Delivery Métricas Kanban PBI): "IC (Rematrix)", "EFC total", "EFC – Pedagógico".
+  ic: { time: "Rematrix" }, "ic rematrix": { time: "Rematrix" }, "efc total": { time: "Eficientes" },
+  "efc pedagogico": { time: "Eficientes", frente: "Pedagógico" }, "efc folha de professores": { time: "Eficientes", frente: "Folha de Professores" },
   "contas a pagar": { time: "Contas a Pagar" }, fluig: { time: "Contas a Pagar" }, cf: { time: "Contas a Pagar" },
 };
 
@@ -206,8 +218,10 @@ export function montarLinhas(
     if (!nome) return avisos.push({ linha: n, motivo: "sem nome de sprint/ciclo" }) && undefined;
     const t = timeDe(valor(l, "time"), nome, opcoes.timePadrao);
     if (!t) return avisos.push({ linha: n, motivo: `time não reconhecido ("${valor(l, "time") ?? nome}")` }) && undefined;
-    const inicio = data(valor(l, "inicio"));
-    let fim = data(valor(l, "fim"));
+    // Na planilha Kanban "Semana início" é a segunda-feira; a janela real (sáb–sex) está no nome.
+    const janela = janelaDoNome(nome);
+    const inicio = janela?.inicio ?? data(valor(l, "inicio"));
+    let fim = janela?.fim ?? data(valor(l, "fim"));
     // Planilha Kanban só traz o início do ciclo: o fim é início + duração.
     if (!fim && inicio) fim = new Date(Date.parse(inicio) + (opcoes.duracaoDias - 1) * 86400000).toISOString().slice(0, 10);
     if (!fim) return avisos.push({ linha: n, motivo: "sem data de fim/início" }) && undefined;

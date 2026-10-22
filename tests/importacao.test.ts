@@ -105,3 +105,25 @@ describe("composição (tipo, planejamento, roadmap)", async () => {
     expect(ind.medidaComposicao).toEqual({ porPlanejamento: "pontos", porTipo: "pontos", porRoadmap: "itens" });
   });
 });
+
+describe("planilha Kanban (resumo semanal)", () => {
+  const cab = ["Semana início", "Semana", "Time", "Itens", "Média útil (h)", "P85 útil (h)", "P85 útil (dias)", "Story Points", "Story points sem SDD", "Ganho SDD"];
+  const dados = [cab,
+    ["29/06/2026", "27/06–03/07/2026", "EFC total", "15", "41,8", "68,56", "6,9964", "22", "46", "187,50%"],
+    ["29/06/2026", "27/06–03/07/2026", "EFC – Pedagógico", "7", "55,8", "82,08", "8,3755", "13", "39", "200,00%"],
+    ["29/06/2026", "27/06–03/07/2026", "IC (Rematrix)", "2", "13,5", "18,07", "1,8442", "6", "11", "83,33%"],
+    ["28/12/2026", "26/12–01/01/2027", "IC (Rematrix)", "3", "1", "1", "1", "1", "1", "0%"]];
+  it("reconhece colunas, times e a janela sábado–sexta", () => {
+    const mapa = sugerirMapa(cab);
+    expect(mapa.cycle_p85).toBe(6);
+    expect(mapa.itens_entregues).toBe(3);
+    expect(mapa.pts_sdd).toBe(7);
+    expect(mapa.pts_sem_sdd).toBe(8);
+    const r = montarLinhas(dados, 1, mapa, { tipo: "semana", duracaoDias: 7, unidadeCiclo: "auto" });
+    expect(r.avisos).toEqual([]);
+    expect(r.linhas[0]).toMatchObject({ time: "Eficientes", frente: "", inicio: "2026-06-27", fim: "2026-07-03", itens_entregues: 15, pts_sdd: 22 });
+    expect(r.linhas[1]).toMatchObject({ time: "Eficientes", frente: "Pedagógico" });
+    expect(r.linhas[2]).toMatchObject({ time: "Rematrix", cycle_p85: 1.8442 });
+    expect(r.linhas[3]).toMatchObject({ inicio: "2026-12-26", fim: "2027-01-01" });
+  });
+});
