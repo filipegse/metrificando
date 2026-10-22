@@ -19,10 +19,10 @@ describe("situação de férias (CLT)", () => {
     expect(tempoSemFerias(1, "2024-09-01", [], hoje)!.nivel).toBe("critico");
   });
   it("férias tiradas no prazo atendem o período; conta o período seguinte", () => {
-    // admissão 01/03/2023: período 2 começa 01/03/2024, prazo 01/03/2026 (depois do corte) → 31 meses: vencido
-    expect(tempoSemFerias(1, "2023-03-01", [f(1, "2024-07-01", "2024-07-30")], hoje)!.nivel).toBe("critico");
-    // com férias também em 2025 (prazo do período 2), o período 3 começa 01/03/2025 → 19 meses: ok
-    expect(tempoSemFerias(1, "2023-03-01", [f(1, "2024-07-01", "2024-07-30"), f(1, "2025-08-04", "2025-08-23")], hoje)?.nivel ?? "ok").toBe("ok");
+    // admissão 01/11/2023: período 2 começa 01/11/2024, prazo 01/11/2026 → 23 meses sem férias: aviso
+    expect(tempoSemFerias(1, "2023-11-01", [], hoje)!.nivel).toBe("atencao");
+    // com férias em 03/2026 (dentro do prazo do período 2), o período 3 ainda está em aquisição: sem alerta
+    expect(tempoSemFerias(1, "2023-11-01", [f(1, "2026-03-02", "2026-03-21")], hoje)).toBeNull();
   });
   it("férias já marcadas dentro do prazo apagam o aviso", () => {
     // férias marcadas para 16/11/2026 (prazo do período vai até 15/12/2026): período considerado atendido
@@ -32,14 +32,13 @@ describe("situação de férias (CLT)", () => {
     expect(r.nivel).toBe("atencao");
     expect(r.texto).toContain("depois do prazo");
   });
-  it("períodos com prazo antes de 01/01/2026 são ignorados", () => {
-    // admissão 01/06/2022: período 1 (prazo 01/06/2024) e período 2 (prazo 01/06/2025) ficam fora;
-    // período 3 começa 01/06/2024, prazo 01/06/2026 → vencido (28 meses), mesmo sem nenhum registro antes
-    const r = tempoSemFerias(1, "2022-06-01", [], hoje)!;
-    expect(r.desde).toBe("2024-06-01");
+  it("períodos com prazo antes de 01/09/2026 são ignorados", () => {
+    // admissão 01/06/2022: prazos 06/2024, 06/2025 e 06/2026 ficam fora do corte; o período 4 (desde 01/06/2025) tem 16 meses: sem alerta
+    expect(tempoSemFerias(1, "2022-06-01", [], hoje)?.nivel ?? "ok").toBe("ok");
+    // admissão 15/09/2024: prazo do 1º período em 15/09/2026, depois do corte → vencido
+    const r = tempoSemFerias(1, "2024-09-15", [], hoje)!;
+    expect(r.desde).toBe("2024-09-15");
     expect(r.nivel).toBe("critico");
-    // com férias em 2025 (prazo do período 3), o período 4 começa 01/06/2025 → 16 meses: ok
-    expect(tempoSemFerias(1, "2022-06-01", [f(1, "2025-09-01", "2025-09-30")], hoje)?.nivel ?? "ok").toBe("ok");
   });
   it("sem admissão (terceirizado) não calcula", () => {
     expect(tempoSemFerias(1, null, [], hoje)).toBeNull();

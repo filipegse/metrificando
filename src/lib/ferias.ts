@@ -22,9 +22,9 @@ export type SemFerias = {
 export const MES_AVISO = 22;
 /**
  * Data de corte: períodos cujo prazo terminou antes dela são ignorados (sem histórico confiável de férias antes disso).
- * Só são avaliados os períodos com prazo a partir de 01/01/2026.
+ * Só são avaliados os períodos com prazo a partir de 01/09/2026.
  */
-export const CORTE_FERIAS = "2026-01-01";
+export const CORTE_FERIAS = "2026-09-01";
 export const MES_VENCIDO = 24;
 
 const br = (d: string) => d.split("-").reverse().join("/");
