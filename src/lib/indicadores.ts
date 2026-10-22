@@ -36,6 +36,9 @@ export type Indicadores = {
   /** Participação do tech lead no período (fração 0–1), da planilha Kanban. */
   pctItensTl?: number | null;
   pctPtsTl?: number | null;
+  /** Horas trabalhadas fora do expediente nos itens do período e quantos itens tiveram hora extra. */
+  horaExtraH?: number | null;
+  itensHoraExtra?: number | null;
   /** Dias-dev disponíveis no período (cadastro de pessoas, ausências e feriados). */
   capacidade?: number;
   ganhoSdd?: number | null;
@@ -150,6 +153,7 @@ export type LinhaHistoricoDeck = Record<string, unknown> & {
   entrega: number | null; extras: number | null; pts_sdd: number | null; esforco_sdd: number | null; pts_sem_sdd: number | null;
   ganho_sdd: number | null; itens_entregues: number | null; cycle_p50: number | null; cycle_p85: number | null;
   produtividade: number | null; motivacao: number | null; pct_itens_tl?: number | null; pct_pts_tl?: number | null;
+  hora_extra_h?: number | null; itens_hora_extra?: number | null;
 };
 
 /** Composição do histórico: pontos por categoria; sem pontos no período, usa a quantidade de itens. */
@@ -178,6 +182,7 @@ export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
     produtividade: h.produtividade, motivacao: h.motivacao,
     esforcoSdd: h.esforco_sdd, ganhoSdd: h.ganho_sdd, historico: true,
     pctItensTl: h.pct_itens_tl ?? null, pctPtsTl: h.pct_pts_tl ?? null,
+    horaExtraH: h.hora_extra_h ?? null, itensHoraExtra: h.itens_hora_extra ?? null,
   };
 }
 

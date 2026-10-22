@@ -219,3 +219,7 @@ alter table historico_periodos
   add column if not exists plan_padrao_pts numeric, add column if not exists plan_padrao_itens numeric,
   add column if not exists plan_urgente_pts numeric, add column if not exists plan_urgente_itens numeric,
   add column if not exists pct_itens_tl numeric, add column if not exists pct_pts_tl numeric;
+
+-- Kanban: hora extra no período
+alter table historico_periodos
+  add column if not exists hora_extra_h numeric, add column if not exists itens_hora_extra numeric;

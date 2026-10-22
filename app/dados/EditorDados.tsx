@@ -29,6 +29,8 @@ const COLUNAS: { campo: string; rotulo: string; tipo: "texto" | "data" | "numero
   { campo: "motivacao", rotulo: "Motivação %", tipo: "fracao" },
   { campo: "pct_itens_tl", rotulo: "TL itens %", tipo: "fracao" },
   { campo: "pct_pts_tl", rotulo: "TL pontos %", tipo: "fracao" },
+  { campo: "hora_extra_h", rotulo: "Hora extra (h)", tipo: "numero" },
+  { campo: "itens_hora_extra", rotulo: "Itens c/ hora extra", tipo: "numero" },
 ];
 // Composição (22 colunas): exibidas só quando o usuário pede.
 const COLUNAS_COMPOSICAO = CATEGORIAS.flatMap((c) => (["pts", "itens"] as const).map((m) => ({

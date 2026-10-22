@@ -139,6 +139,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
         {pct(p.pctItensTl ?? null)} / {pct(p.pctPtsTl ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.capacidade) ? [["Capacidade (dias-dev)", (p: Indicadores) => num(p.capacidade ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
+    ...(ps.some((p) => p.horaExtraH != null) ? [["Hora extra (h · itens)", (p: Indicadores) =>
+      (p.horaExtraH == null ? "—" : `${num(p.horaExtraH)} · ${p.itensHoraExtra ?? "—"}`)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Chamados resolvidos (N3)", (p) => (p.chamados == null ? "—" : `${p.chamados} (${p.chamadosN3})`)],
     ...(t.perfil.teamRetroId ? [
       ["Produtividade", (p: Indicadores) => <span className={`s-${corSaude(p.produtividade)}`}>{pct(p.produtividade)}</span>],
