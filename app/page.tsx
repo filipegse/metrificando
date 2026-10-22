@@ -72,9 +72,11 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<R
           time: perfil.time,
           metodologia: perfil.metodologia,
           // Escolha geral/por frente só para quem divide sprints entre frentes (Nexus, Eficientes); o TRG já é sempre por frente.
-          frentes: perfil.sprintsPorFrente ? [] : perfil.frentes ?? [],
+          frentes: perfil.sprintsPorFrente?.map((f) => f.frente) ?? perfil.frentes ?? [],
+          // Retaguarda não tem visão de time inteiro (cada frente tem board e sprints próprios).
+          sempreFrente: !!perfil.sprintsPorFrente,
           sprints: sprints.filter((x) => x.time === perfil.time)
-            .map((x) => ({ id: x.periodo_id, nome: x.frente && x.frente !== perfil.time ? `${x.nome} (${x.frente})` : x.nome ?? x.periodo_id, fim: x.fim })),
+            .map((x) => ({ id: x.periodo_id, frente: x.frente, nome: x.frente && x.frente !== perfil.time ? `${x.nome} (${x.frente})` : x.nome ?? x.periodo_id, fim: x.fim })),
           conteudo: (
             <>
               <h2>{perfil.time}</h2>

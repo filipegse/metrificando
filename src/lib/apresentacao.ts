@@ -52,7 +52,7 @@ export function chaveLeitura(time: string, slide: string) {
 
 /** Recorte escolhido na página inicial: sprints específicas (Scrum) ou intervalo de datas (Kanban). */
 /** `porFrente`: Nexus/Eficientes apresentados por frente em vez do time inteiro. */
-export type Recorte = { sprints?: string[]; de?: string; ate?: string; porFrente?: boolean; agrupamento?: Agrupamento };
+export type Recorte = { sprints?: string[]; de?: string; ate?: string; porFrente?: boolean; frentes?: string[]; agrupamento?: Agrupamento };
 
 /** Lê `s_DSR=123,124`, `de_EFC=2026-09-01&ate_EFC=2026-10-15` e `f_NXS=frentes` da URL. */
 export function recortesDaUrl(q: Record<string, string | undefined>): Record<string, Recorte> {
@@ -61,12 +61,23 @@ export function recortesDaUrl(q: Record<string, string | undefined>): Record<str
     const m = /^(s|de|ate|f|g)_([A-Z0-9]+)$/.exec(k);
     if (!m || !v) continue;
     const alvo = (r[m[2]] ??= {});
-    if (m[1] === "f") alvo.porFrente = v === "frentes";
+    // f_X=frentes (todas, separadas) · f_X=Avaliações (só as listadas) · f_X=geral (time inteiro)
+    if (m[1] === "f") {
+      alvo.porFrente = v !== "geral";
+      if (v !== "frentes" && v !== "geral") alvo.frentes = v.split(",").filter(Boolean);
+    }
     else if (m[1] === "g" && (AGRUPAMENTOS as readonly string[]).includes(v)) alvo.agrupamento = v as Agrupamento;
     else if (m[1] === "s") alvo.sprints = v.split(",").filter(Boolean);
     else alvo[m[1] as "de" | "ate"] = v;
   }
   return r;
+}
+
+/** Frentes apresentadas: TRG sempre por frente; Nexus/Eficientes por frente quando pedido; `frentes` restringe a algumas. */
+export function blocosDe(perfil: Perfil, r: Recorte): (string | undefined)[] {
+  const todas = perfil.sprintsPorFrente?.map((f) => f.frente) ?? (r.porFrente ? perfil.frentes ?? [] : []);
+  const escolhidas = r.frentes?.length ? todas.filter((f) => r.frentes!.includes(f)) : todas;
+  return escolhidas.length ? escolhidas : perfil.sprintsPorFrente ? todas : [undefined];
 }
 
 /** Fim do dia `ate` (inclusivo), no horário da Bahia. */
@@ -112,8 +123,7 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
 
     // Blocos do deck: frentes com sprints próprias (TRG), frentes escolhidas (Nexus/Eficientes) ou o time inteiro.
     const sprintsProprias = !!perfil.sprintsPorFrente;
-    const blocos: (string | undefined)[] = sprintsProprias ? perfil.sprintsPorFrente!.map((f) => f.frente)
-      : r.porFrente && perfil.frentes?.length ? perfil.frentes : [undefined];
+    const blocos: (string | undefined)[] = blocosDe(perfil, r);
     for (const frente of blocos) {
       const daFrente = (x: { frente?: string | null }) => !frente || sprintsProprias || (x.frente ?? "").split(", ").includes(frente);
       const doBloco = periodos.filter((p) => !sprintsProprias || !frente || p.frente === frente);
@@ -152,7 +162,7 @@ export function deckDemo(deck: string, projetos: string[], recortes: Record<stri
   let semente = 7;
   const rnd = () => ((semente = (semente * 9301 + 49297) % 233280) / 233280);
   const times = PERFIS.filter((p) => projetos.includes(p.projeto)).flatMap((perfil) =>
-    (perfil.sprintsPorFrente?.map((f) => f.frente) ?? (recortes[perfil.projeto]?.porFrente && perfil.frentes ? perfil.frentes : [undefined])).map((frente) => {
+    blocosDe(perfil, recortes[perfil.projeto] ?? {}).map((frente) => {
     const scrum = perfil.metodologia === "scrum";
     const n = scrum ? 5 : 12;
     const periodos: Indicadores[] = Array.from({ length: n }, (_, k) => {

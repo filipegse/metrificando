@@ -132,3 +132,19 @@ describe("agrupamento mensal e trimestral", () => {
     expect(agrupar([p("2026-09-30", 4), p("2026-10-01", 8)], "trimestre").map((x) => x.periodo.rotulo)).toEqual(["Q3 2026", "Q4 2026"]);
   });
 });
+
+import { blocosDe, recortesDaUrl } from "../src/lib/apresentacao";
+import { PERFIS } from "../src/config/perfis";
+describe("frentes do deck", () => {
+  const perfil = (p: string) => PERFIS.find((x) => x.projeto === p)!;
+  it("só uma frente", () => {
+    const r = recortesDaUrl({ f_NXS: "Avaliações", f_TRG: "X-Retaguarda" });
+    expect(blocosDe(perfil("NXS"), r.NXS)).toEqual(["Avaliações"]);
+    expect(blocosDe(perfil("TRG"), r.TRG)).toEqual(["X-Retaguarda"]);
+  });
+  it("padrões", () => {
+    expect(blocosDe(perfil("NXS"), {})).toEqual([undefined]);
+    expect(blocosDe(perfil("NXS"), recortesDaUrl({ f_NXS: "frentes" }).NXS)).toEqual(perfil("NXS").frentes);
+    expect(blocosDe(perfil("TRG"), {})).toEqual(["Retaguarda", "X-Retaguarda"]);
+  });
+});

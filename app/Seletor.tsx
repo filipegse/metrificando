@@ -6,8 +6,8 @@ import { Icone } from "./componentes/Icone";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SLIDES, TODOS_SLIDES } from "@/lib/slides";
 
-type Sprint = { id: string; nome: string; fim: string };
-type Cartao = { projeto: string; time: string; metodologia: "scrum" | "kanban"; sprints: Sprint[]; frentes: string[]; conteudo: ReactNode };
+type Sprint = { id: string; nome: string; fim: string; frente?: string };
+type Cartao = { projeto: string; time: string; metodologia: "scrum" | "kanban"; sprints: Sprint[]; frentes: string[]; sempreFrente?: boolean; conteudo: ReactNode };
 type Recorte = { sprints: Set<string>; de: string; ate: string };
 type Agrup = "periodo" | "quinzena" | "mes" | "trimestre";
 
@@ -47,7 +47,29 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
   const primeiraVez = useRef(true);
   const [recortes, setRecortes] = useState<Record<string, Recorte>>({});
   const [personalizar, setPersonalizar] = useState(() => Object.keys(inicial).some((k) => /^(s|de|ate)_/.test(k)));
-  const [porFrente, setPorFrente] = useState<Set<string>>(() => new Set(Object.keys(inicial).filter((k) => k.startsWith("f_") && inicial[k] === "frentes").map((k) => k.slice(2))));
+  // Frentes escolhidas por time; ausente = time inteiro (ou todas as frentes, na Retaguarda).
+  const [selFrentes, setSelFrentes] = useState<Record<string, string[]>>(() => Object.fromEntries(cartoes.flatMap((c) => {
+    const v = inicial[`f_${c.projeto}`];
+    if (!v || v === "geral") return [];
+    return [[c.projeto, v === "frentes" ? c.frentes : v.split(",").filter((f) => c.frentes.includes(f))]];
+  })));
+  const frentesDe = (c: Cartao) => selFrentes[c.projeto] ?? (c.sempreFrente ? c.frentes : []);
+  const alternarFrente = (c: Cartao, f?: string) => setSelFrentes((s) => {
+    const n = { ...s };
+    if (!f) { delete n[c.projeto]; return n; }
+    const atual = new Set(frentesDe(c));
+    atual.has(f) ? atual.delete(f) : atual.add(f);
+    // Retaguarda precisa de ao menos uma frente; nos demais, nenhuma frente = time inteiro.
+    if (!atual.size) { if (c.sempreFrente) return s; delete n[c.projeto]; return n; }
+    n[c.projeto] = c.frentes.filter((x) => atual.has(x));
+    return n;
+  });
+  const descricaoFrentes = (c: Cartao) => {
+    const f = frentesDe(c);
+    if (!c.frentes.length) return "";
+    if (!f.length) return " · time inteiro";
+    return f.length === c.frentes.length ? ` · por frente (${f.join(", ")})` : ` · só ${f.join(", ")}`;
+  };
   const [agrup, setAgrup] = useState<Record<string, Agrup>>(() => Object.fromEntries(Object.entries(inicial)
     .filter(([k, v]) => k.startsWith("g_") && v && ["quinzena", "mes", "trimestre"].includes(v)).map(([k, v]) => [k.slice(2), v as Agrup])));
   const [slides, setSlides] = useState<Set<string>>(() => new Set(inicial.slides ? inicial.slides.split(",") : TODOS_SLIDES));
@@ -82,7 +104,10 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
 
   const destino = useMemo(() => {
     const q = new URLSearchParams({ trimestre, times: selecionados.map((c) => c.projeto).join(",") });
-    for (const c of selecionados) if (porFrente.has(c.projeto)) q.set(`f_${c.projeto}`, "frentes");
+    for (const c of selecionados) {
+      const f = selFrentes[c.projeto];
+      if (f?.length) q.set(`f_${c.projeto}`, f.length === c.frentes.length ? "frentes" : f.join(","));
+    }
     for (const c of selecionados) {
       const a = agrup[c.projeto];
       if (a && a !== "periodo" && OPCOES_AGRUP[c.metodologia].some(([v]) => v === a)) q.set(`g_${c.projeto}`, a);
@@ -97,7 +122,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
     }
     if (TODOS_SLIDES.some((s) => !slides.has(s))) q.set("slides", [...slides].join(","));
     return `/apresentacao?${q.toString()}`;
-  }, [trimestre, selecionados, recortes, personalizar, porFrente, agrup, slides]);
+  }, [trimestre, selecionados, recortes, personalizar, selFrentes, agrup, slides]);
 
   const podeAvancar = passo === 0 ? selecionados.length > 0 : passo === 2 ? slidesEscolhidos.length > 0 : true;
   const rotuloTrimestre = trimestre.replace(/^(\d{4})-Q(\d)$/, "Q$2 $1");
@@ -137,16 +162,20 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
                   {c.conteudo}
                   {ativo && c.frentes.length > 0 && (
                     <div className="recorte" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      <div className="recorte-titulo">Apresentação</div>
-                      <div className="alternador" role="radiogroup">
-                        {[["geral", "Time inteiro"], ["frentes", `Por frente (${c.frentes.join(", ")})`]].map(([v, r]) => (
-                          <label key={v} className={`chip ${(v === "frentes") === porFrente.has(c.projeto) ? "ativo" : ""}`}>
-                            <input type="radio" name={`f_${c.projeto}`} checked={(v === "frentes") === porFrente.has(c.projeto)}
-                              onChange={() => setPorFrente((s) => { const n = new Set(s); v === "frentes" ? n.add(c.projeto) : n.delete(c.projeto); return n; })} />
-                            {r}
+                      <div className="recorte-titulo">Frentes</div>
+                      <div className="alternador">
+                        {!c.sempreFrente && (
+                          <label className={`chip ${!frentesDe(c).length ? "ativo" : ""}`}>
+                            <input type="checkbox" checked={!frentesDe(c).length} onChange={() => alternarFrente(c)} /> Time inteiro
+                          </label>
+                        )}
+                        {c.frentes.map((f) => (
+                          <label key={f} className={`chip ${frentesDe(c).includes(f) ? "ativo" : ""}`}>
+                            <input type="checkbox" checked={frentesDe(c).includes(f)} onChange={() => alternarFrente(c, f)} /> {f}
                           </label>
                         ))}
                       </div>
+                      <p className="dica">{!frentesDe(c).length ? "Um bloco com o time inteiro." : frentesDe(c).length === c.frentes.length ? "Um bloco por frente." : `Só ${frentesDe(c).join(", ")}.`}</p>
                     </div>
                   )}
                 </section>
@@ -173,7 +202,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
             {selecionados.map((c) => (
               <section key={c.projeto} className="card">
                 <h2>{c.time}</h2>
-                <div className="meta">{c.metodologia === "scrum" ? "Scrum" : "Kanban"} · {periodoDe(c)}</div>
+                <div className="meta">{c.metodologia === "scrum" ? "Scrum" : "Kanban"}{descricaoFrentes(c)} · {periodoDe(c)}</div>
                 <div className="recorte">
                   <div className="recorte-titulo">Agrupamento</div>
                   <div className="alternador" role="radiogroup">
@@ -191,7 +220,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
                 </div>
                 {personalizar && recortes[c.projeto] && (
                   <div className="recorte">
-                    <RecorteDoTime cartao={c} recorte={recortes[c.projeto]} mudar={(f) => atualizar(c.projeto, f)} />
+                    <RecorteDoTime cartao={c.sempreFrente ? { ...c, sprints: c.sprints.filter((x) => !x.frente || frentesDe(c).includes(x.frente)) } : c} recorte={recortes[c.projeto]} mudar={(f) => atualizar(c.projeto, f)} />
                   </div>
                 )}
               </section>
@@ -235,7 +264,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
               <ul>
                 {selecionados.map((c) => (
                   <li key={c.projeto}>
-                    <b>{c.time}</b>{c.frentes.length ? (porFrente.has(c.projeto) ? ` · por frente (${c.frentes.join(", ")})` : " · time inteiro") : ""}
+                    <b>{c.time}</b>{descricaoFrentes(c)}
                     {" · "}{periodoDe(c)} · {ROTULO_AGRUP(c.metodologia, agrup[c.projeto] ?? "periodo").toLowerCase()}
                   </li>
                 ))}
