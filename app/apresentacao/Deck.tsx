@@ -4,7 +4,7 @@
 import { Icone } from "../componentes/Icone";
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-export function Deck({ children, voltar }: { children: ReactNode; voltar: string }) {
+export function Deck({ children, voltar, imprimir }: { children: ReactNode; voltar: string; imprimir?: boolean }) {
   const slides = Children.toArray(children);
   const [i, setI] = useState(0);
   const [escala, setEscala] = useState(1);
@@ -17,6 +17,13 @@ export function Deck({ children, voltar }: { children: ReactNode; voltar: string
     if (h > 0) setI(Math.min(h - 1, slides.length - 1));
   }, [slides.length]);
   useEffect(() => { history.replaceState(null, "", `#${i + 1}`); }, [i]);
+  // Vindo do assistente com "Imprimir / PDF": abre a janela de impressão depois de carregar as fontes.
+  useEffect(() => {
+    if (!imprimir) return;
+    let vivo = true;
+    document.fonts.ready.then(() => setTimeout(() => vivo && window.print(), 300));
+    return () => { vivo = false; };
+  }, [imprimir]);
 
   useEffect(() => {
     const ajustar = () => setEscala(Math.min(window.innerWidth / 1280, (window.innerHeight - 40) / 720));

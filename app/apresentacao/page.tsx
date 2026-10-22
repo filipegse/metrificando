@@ -9,6 +9,7 @@ import { numeroDe } from "@/lib/teamretro";
 import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
+import { slidesDaUrl } from "@/lib/slides";
 import "./deck.css";
 
 // Reserva até os arquivos da At Hauss Aero (fonte oficial, licenciada) estarem em public/fonts.
@@ -25,7 +26,7 @@ const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone
 // Número da sprint ("Sprint 110 - 13/10 - 26/10" → 110, "X-Reta | Sprint 132" → 132); semana Kanban pela data.
 // Semana Kanban: a janela é sáb–sex, mas o rótulo mostra sempre a segunda-feira.
 const diaMes = (dia: string) => `${dia.slice(8, 10)}/${dia.slice(5, 7)}`;
-const rotulo = (p: Indicadores) => (p.periodo.tipo === "semana" ? diaMes(segundaDaSemana(p.periodo.inicio))
+const rotulo = (p: Indicadores) => (p.periodo.rotulo ? p.periodo.rotulo : p.periodo.tipo === "semana" ? diaMes(segundaDaSemana(p.periodo.inicio))
   : p.periodo.nome ? numeroDe(p.periodo.nome) ?? p.periodo.nome : dataBR(p.periodo.inicio));
 
 const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecnologia", bug: "Correção", operacional: "Operacional", ajuste: "Ajuste", outro: "Outro" };
@@ -88,10 +89,16 @@ function Slide({ children, escuro, rodape, demo, pedagogico }: { children: React
   );
 }
 
-function slidesDoTime(d: DadosDeck, t: DadosTime) {
+const NOME_GRUPO = { quinzena: ["Quinzenas", "quinzena"], mes: ["Meses", "mês"], trimestre: ["Trimestres", "trimestre"] } as const;
+
+function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
   const ps = t.periodos;
   const scrum = metodologiaDe(t) === "scrum";
-  const unidade = scrum ? "Sprints" : t.quinzenal ? "Quinzenas (média semanal)" : "Semanas (sáb–sex)";
+  const g = t.agrupamento && t.agrupamento !== "periodo" ? NOME_GRUPO[t.agrupamento] : null;
+  // Agrupado: cada grupo mostra a média das semanas (Kanban) ou das sprints (Scrum) que o compõem.
+  const base = scrum ? "sprint" : "semana";
+  const unidade = g ? `${g[0]} (média por ${base})` : scrum ? "Sprints" : "Semanas (sáb–sex)";
+  const notaGrupo = g ? ` · média por ${base} de cada ${g[1]}` : "";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
     <Leitura deck={d.deck} time={nomeDoTime(t)} slide={slide} inicial={d.leituras[chaveLeitura(nomeDoTime(t), slide)]} demo={d.demo} placeholder={placeholder} />
@@ -183,7 +190,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   } else {
     slides.push(
       <Slide key="vazao" rodape={rodape} demo={d.demo}>
-        <Cabecalho t={t} eyebrow="VAZÃO" titulo={t.quinzenal ? "Itens entregues por semana · média da quinzena" : "Itens entregues por semana"} sub={`${t.quinzenal ? "Média das duas semanas (sáb–sex) de cada quinzena · quinzena identificada pela primeira segunda-feira" : "Semana identificada pela segunda-feira · janela sábado a sexta"}${
+        <Cabecalho t={t} eyebrow="VAZÃO" titulo={g ? `Itens entregues por semana · média do ${g[1]}` : "Itens entregues por semana"} sub={`${g ? `Média das semanas (sáb–sex) de cada ${g[1]}${t.agrupamento === "quinzena" ? " · quinzena identificada pela primeira segunda-feira" : ""}` : "Semana identificada pela segunda-feira · janela sábado a sexta"}${
           ps.some(tlEmDestaque) ? ` · tech lead com 30% ou mais: ${ps.filter(tlEmDestaque).map(rotulo).join(", ")}` : ""}`} />
         <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Itens entregues", valores: ps.map((p) => p.itensEntregues) }]} /></div>
         <Faixa slide="vazao" />
@@ -193,12 +200,12 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
 
   slides.push(
     <Slide key="desempenho" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="DESEMPENHO" titulo="Desempenho por pontos" sub={`Pontos concluídos COM SDD e SEM SDD${t.quinzenal ? " · média semanal de cada quinzena" : ""}`} />
+      <Cabecalho t={t} eyebrow="DESEMPENHO" titulo="Desempenho por pontos" sub={`Pontos concluídos COM SDD e SEM SDD${notaGrupo}`} />
       <div className="grafico"><Barras rotulos={rot} series={[{ nome: "COM SDD", valores: ps.map((p) => p.ptsSdd) }, { nome: "SEM SDD", valores: ps.map((p) => p.ptsSemSdd) }]} formato={num} /></div>
       <Faixa slide="desempenho" />
     </Slide>,
     <Slide key="cycle" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis do início do trabalho até Concluído · P50 e P85${t.quinzenal ? " · quinzena = média das semanas ponderada por itens" : ""}`} />
+      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis do início do trabalho até Concluído · P50 e P85${g ? ` · ${g[1]} = média dos períodos ponderada por itens` : ""}`} />
       <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
       <Faixa slide="cycle" />
     </Slide>,
@@ -274,7 +281,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     "comp-plan": vazio("porPlanejamento"), "comp-tipo": vazio("porTipo"), roadmap: vazio("porRoadmap"),
     suporte: ps.every((p) => p.chamados == null), cycle: ps.every((p) => p.cycleP50 == null),
   };
-  return slides.filter((el) => !sem[String(el.key)]);
+  return slides.filter((el) => !sem[String(el.key)] && escolhidos.has(String(el.key)));
 }
 
 /**
@@ -313,13 +320,14 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
   const projetos = q.times ? q.times.split(",").map((s) => s.trim().toUpperCase()) : PERFIS.map((p) => p.projeto);
   const demo = q.demo === "1" || q.demo === "misto" || (!urlBanco());
   const recortes = recortesDaUrl(q);
+  const escolhidos = slidesDaUrl(q.slides);
   // Volta para a página inicial com a mesma seleção (times, trimestre, frentes e recortes).
   const voltar = `/?${new URLSearchParams(Object.entries(q).filter(([k, v]) => v && k !== "demo") as [string, string][]).toString()}`;
   const d = demo ? deckDemo(deck, projetos, recortes, q.demo === "misto") : await carregarDeck(deck, projetos, recortes);
 
   return (
     <div className={fonte.variable}>
-      <Deck voltar={voltar}>
+      <Deck voltar={voltar} imprimir={q.imprimir === "1"}>
         <section className="slide verde" key="abertura">
           <Grafismo tipo="linhas" />
           <div className="capa">
@@ -331,11 +339,11 @@ export default async function Apresentacao({ searchParams }: { searchParams: Bus
           {d.demo && <span className="selo-demo">DADOS FICTÍCIOS</span>}
         </section>
         {d.times.flatMap((t, i) => {
-          const s = slidesDoTime(d, t);
+          const s = slidesDoTime(d, t, escolhidos);
           const ant = d.times[i - 1];
           // Depois do bloco Kanban de um time que também teve bloco Scrum no recorte: slide de transição.
           return t.fase === "kanban" && ant?.fase === "scrum" && ant.perfil === t.perfil && ant.frente === t.frente
-            ? [...s, slideTransicao(d, ant, t)] : s;
+            ? [...s, ...(escolhidos.has("transicao") ? [slideTransicao(d, ant, t)] : [])] : s;
         })}
         <section className="slide verde" key="fim">
           <Grafismo tipo="linhas" />

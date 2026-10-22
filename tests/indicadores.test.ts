@@ -114,3 +114,21 @@ describe("quinzenas", () => {
     expect(q[0]).toMatchObject({ itensEntregues: 4, ptsSdd: 8, cycleP85: 4, porPlanejamento: { "Padrão": 4 } });
   });
 });
+
+import { agrupar } from "../src/lib/agrupamento";
+describe("agrupamento mensal e trimestral", () => {
+  const p = (fim: string, itens: number, entrega: number | null = null) => ({
+    periodo: { periodo_id: fim, nome: fim, tipo: "sprint", inicio: fim, fim, frente: "" }, entrega, extras: null,
+    ptsSdd: itens, ptsSemSdd: itens, itensEntregues: itens, cycleP50: null, cycleP85: null,
+    porPlanejamento: {}, porTipo: {}, porRoadmap: {}, chamados: null, chamadosN3: null, trabalhoN3: null,
+    resolucaoP50: null, produtividade: null, motivacao: null,
+  }) as never;
+  it("média por mês pela data de fim", () => {
+    const g = agrupar([p("2026-10-09", 10, 0.8), p("2026-10-23", 20, 1), p("2026-11-06", 6)], "mes");
+    expect(g.map((x) => x.periodo.rotulo)).toEqual(["out/26", "nov/26"]);
+    expect(g[0]).toMatchObject({ itensEntregues: 15, entrega: 0.9, periodosNoGrupo: 2 });
+  });
+  it("trimestre", () => {
+    expect(agrupar([p("2026-09-30", 4), p("2026-10-01", 8)], "trimestre").map((x) => x.periodo.rotulo)).toEqual(["Q3 2026", "Q4 2026"]);
+  });
+});

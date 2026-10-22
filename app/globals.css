@@ -216,3 +216,28 @@ main input.data-compacta { min-height: 30px; padding: 3px 6px; font-size: var(--
 
 /* Tech lead com 30% ou mais dos itens ou pontos do período */
 table.editavel td.destaque-tl input { color: var(--perigo, #c74f24); font-weight: 700; }
+
+/* Assistente do deck */
+.passos { display: flex; gap: var(--e-2); list-style: none; padding: 0; margin: 0 0 var(--e-4); flex-wrap: wrap; }
+.passos li { flex: 1 1 180px; }
+.passos button { width: 100%; display: flex; align-items: center; gap: 10px; font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+  padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line-forte); background: var(--card); color: var(--fg); }
+.passos button:disabled { cursor: not-allowed; opacity: .55; }
+.passos .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-forte); font-size: var(--t-sm); flex: none; }
+.passos li.atual button { border-color: #000; box-shadow: inset 0 -3px 0 var(--verde-2); }
+.passos li.atual .num { background: #000; color: var(--verde); border-color: #000; }
+.passos li.feito .num { background: var(--verde); border-color: var(--verde); color: #000; }
+.rodape-assistente { display: flex; justify-content: space-between; margin-top: var(--e-4); }
+.lista-slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--e-3); }
+.item-slide { display: flex; gap: 12px; align-items: flex-start; }
+.item-slide input { margin-top: 4px; accent-color: var(--verde-2); }
+.item-slide h3 { margin: 0 0 4px; font-size: var(--t-md, 16px); }
+.item-slide p { margin: 0; color: var(--cinza-verde); font-size: var(--t-sm); }
+.etiqueta { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--suave); border: 1px solid var(--line-forte); font-size: 12px; font-weight: 600; vertical-align: middle; }
+.dica { margin: 6px 0 0; color: var(--cinza-verde); font-size: var(--t-sm); }
+.confirmacao dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: var(--e-3) 0; }
+.confirmacao dt { font-weight: 700; }
+.confirmacao dd { margin: 0; }
+.confirmacao ul { margin: 0; padding-left: 18px; }
+.confirmacao .acoes { display: flex; gap: var(--e-3); flex-wrap: wrap; margin-top: var(--e-4); }
+@media (max-width: 640px) { .confirmacao dl { grid-template-columns: 1fr; } }

@@ -7,7 +7,7 @@ export type LinhaDelivery = {
 };
 export type LinhaSuporte = { periodo_id: string; nivel: string | null; papel: string; tempo_resolucao_dias: number };
 export type LinhaSaude = { periodo_id: string; frente?: string; produtividade: number | null; motivacao: number | null; respostas: number };
-export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string; frente?: string };
+export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string; frente?: string; /** rótulo pronto de um período agrupado */ rotulo?: string };
 
 export type Indicadores = {
   periodo: Periodo;
@@ -36,6 +36,8 @@ export type Indicadores = {
   /** Participação do tech lead no período (fração 0–1), da planilha Kanban. */
   pctItensTl?: number | null;
   pctPtsTl?: number | null;
+  /** Quantos períodos (semanas ou sprints) foram agrupados neste. */
+  periodosNoGrupo?: number;
   /** Horas trabalhadas fora do expediente nos itens do período e quantos itens tiveram hora extra. */
   horaExtraH?: number | null;
   itensHoraExtra?: number | null;
