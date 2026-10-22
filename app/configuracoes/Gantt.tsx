@@ -1,6 +1,6 @@
 "use client";
 // Linha do tempo (gantt) de férias, licenças, folgas e feriados, por pessoa e agrupada por time.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { tempoSemFerias, type SemFerias } from "@/lib/ferias";
 import { Icone } from "../componentes/Icone";
 
@@ -21,6 +21,19 @@ export function Gantt({ pessoas, ausencias, feriados, times }: { pessoas: Pessoa
   const [ate, setAte] = useState(iso(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() + 3, 0) + DIA / 2));
   const [time, setTime] = useState("");
   // Quem mostrar: todos, só quem tem ausência ou só quem não teve férias no período.
+  // A área do calendário vai até o fim da tela: a barra de rolagem horizontal fica sempre visível,
+  // e o cabeçalho de meses/dias e a coluna de nomes ficam fixos ao rolar.
+  const rolagem = useRef<HTMLDivElement>(null);
+  const [altura, setAltura] = useState<number>();
+  useEffect(() => {
+    const ajustar = () => {
+      const el = rolagem.current;
+      if (el) setAltura(Math.max(260, window.innerHeight - (el.getBoundingClientRect().top + window.scrollY) - 24));
+    };
+    ajustar();
+    window.addEventListener("resize", ajustar);
+    return () => window.removeEventListener("resize", ajustar);
+  });
   const [filtro, setFiltro] = useState<"todos" | "com_ausencia" | "sem_ferias">("todos");
   const hojeIso = iso(Date.now());
   const SEM_ALOCACAO = "Sem alocação no período";
@@ -112,11 +125,11 @@ export function Gantt({ pessoas, ausencias, feriados, times }: { pessoas: Pessoa
           }}>Ver a partir de {proximaFora.inicio.split("-").reverse().join("/")}</button>
         </p>
       )}
-      <div className="gantt-rolagem">
+      <div className="gantt-rolagem" ref={rolagem} style={{ maxHeight: altura }}>
         <div className="gantt" style={{ gridTemplateColumns: `220px repeat(${dias.length}, ${largura}px)` }}>
-          <div className="g-canto" />
+          <div className="g-canto g-topo1" />
           {meses.map((m) => <div key={m.rotulo} className="g-mes" style={{ gridColumn: `${m.inicio + 2} / span ${m.n}` }}>{m.rotulo}</div>)}
-          <div className="g-canto" />
+          <div className="g-canto g-topo2" />
           {dias.map((d) => {
             const f = feriadoDe.get(d);
             return <div key={d} className={`g-dia ${fundoDia(d)}`} title={f ? `${f.nome} (${d.split("-").reverse().join("/")})` : undefined}>{Number(d.slice(8))}</div>;

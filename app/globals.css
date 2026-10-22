@@ -173,12 +173,13 @@ table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
 .mudancas { font-size: var(--t-xs); } .mudancas div { white-space: nowrap; }
 
 /* Calendário (gantt) */
-.gantt-rolagem { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); }
+.gantt-rolagem { overflow: auto; border: 1px solid var(--line); border-radius: var(--r-md); overscroll-behavior: contain; }
 .gantt { display: grid; font-size: var(--t-xs); min-width: max-content; }
 .gantt > div, .g-linha > div { border-bottom: 1px solid var(--line); }
-.g-canto { position: sticky; left: 0; background: var(--card); z-index: 2; }
-.g-mes { font-weight: 700; padding: 4px 6px; border-left: 1px solid var(--line); background: var(--card); }
-.g-dia { text-align: center; padding: 3px 0; color: var(--muted); background: var(--card); }
+.g-canto { position: sticky; left: 0; background: var(--card); z-index: 3; }
+.g-topo1 { top: 0; height: 26px; } .g-topo2 { top: 26px; height: 24px; }
+.g-mes { position: sticky; top: 0; z-index: 1; height: 26px; font-weight: 700; padding: 4px 6px; border-left: 1px solid var(--line); background: var(--card); }
+.g-dia { position: sticky; top: 26px; z-index: 1; height: 24px; text-align: center; padding: 3px 0; color: var(--muted); background: var(--card); }
 .g-dia.fds, .g-cel.fds { background: color-mix(in srgb, var(--muted) 14%, var(--card)); }
 .g-dia.feriado, .g-cel.feriado { background: color-mix(in srgb, var(--rosa) 22%, var(--card)); color: var(--fg); font-weight: 700; }
 .g-time { position: sticky; left: 0; font-weight: 700; padding: var(--e-2) 10px var(--e-1); background: var(--suave); font-size: var(--t-sm); }
