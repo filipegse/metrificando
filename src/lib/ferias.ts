@@ -20,6 +20,11 @@ export type SemFerias = {
 };
 
 export const MES_AVISO = 22;
+/**
+ * Data de corte: períodos cujo prazo terminou antes dela são ignorados (sem histórico confiável de férias antes disso).
+ * Só são avaliados os períodos com prazo a partir de 01/01/2026.
+ */
+export const CORTE_FERIAS = "2026-01-01";
 export const MES_VENCIDO = 24;
 
 const br = (d: string) => d.split("-").reverse().join("/");
@@ -51,6 +56,7 @@ export function tempoSemFerias(pessoaId: number, admissao: string | null, ausenc
     const aquisitivo = somaMeses(admissao, 12 * k);
     const abre = somaMeses(admissao, 12 * (k + 1)), prazo = somaMeses(admissao, 12 * (k + 2));
     if (abre > hoje) return null; // período ainda em aquisição: nada a cobrar
+    if (prazo < CORTE_FERIAS) continue; // prazo anterior à data de corte: ignorado
     const atendido = ferias.some((f) => f.inicio >= abre && f.inicio < prazo);
     if (atendido) continue;
     const meses = mesesEntre(aquisitivo, hoje);
