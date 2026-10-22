@@ -91,7 +91,7 @@ function Slide({ children, escuro, rodape, demo, pedagogico }: { children: React
 function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const ps = t.periodos;
   const scrum = metodologiaDe(t) === "scrum";
-  const unidade = scrum ? "Sprints" : "Semanas (sáb–sex)";
+  const unidade = scrum ? "Sprints" : t.quinzenal ? "Quinzenas" : "Semanas (sáb–sex)";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
     <Leitura deck={d.deck} time={nomeDoTime(t)} slide={slide} inicial={d.leituras[chaveLeitura(nomeDoTime(t), slide)]} demo={d.demo} placeholder={placeholder} />
@@ -154,6 +154,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     capa,
     <Slide key="matriz" rodape={rodape} demo={d.demo}>
       <Cabecalho t={t} eyebrow="INDICADORES" titulo={`${unidade} do ${d.rotulo}`} />
+      <div className={`matriz-area ${linhasMatriz.length > 10 ? "densa" : ""}`}>
       <table className="matriz">
         <thead><tr><th>Indicador</th>{psMatriz.map((p) => <th key={p.periodo.periodo_id}>{rotulo(p)}</th>)}</tr></thead>
         <tbody>
@@ -166,6 +167,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
         {[["c1", "Entrega e pontuação"], ["c2", "Fluxo e suporte"], ["c3", "Moral do time"]].map(([k, titulo]) => (
           <div className="card" key={k}><h4>{titulo}</h4>{L(`matriz-${k}`)}</div>
         ))}
+      </div>
       </div>
     </Slide>,
   ];
@@ -181,7 +183,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   } else {
     slides.push(
       <Slide key="vazao" rodape={rodape} demo={d.demo}>
-        <Cabecalho t={t} eyebrow="VAZÃO" titulo="Itens entregues por semana" sub={`Semana identificada pela segunda-feira · janela sábado a sexta${
+        <Cabecalho t={t} eyebrow="VAZÃO" titulo={`Itens entregues por ${t.quinzenal ? "quinzena" : "semana"}`} sub={`${t.quinzenal ? "Quinzena (duas semanas sáb–sex) identificada pela primeira segunda-feira" : "Semana identificada pela segunda-feira · janela sábado a sexta"}${
           ps.some(tlEmDestaque) ? ` · tech lead com 30% ou mais: ${ps.filter(tlEmDestaque).map(rotulo).join(", ")}` : ""}`} />
         <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Itens entregues", valores: ps.map((p) => p.itensEntregues) }]} /></div>
         <Faixa slide="vazao" />
@@ -196,7 +198,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
       <Faixa slide="desempenho" />
     </Slide>,
     <Slide key="cycle" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub="Dias corridos do início do trabalho até Concluído · P50 e P85" />
+      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis do início do trabalho até Concluído · P50 e P85${t.quinzenal ? " · quinzena = média das semanas ponderada por itens" : ""}`} />
       <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
       <Faixa slide="cycle" />
     </Slide>,
@@ -283,7 +285,7 @@ function slideTransicao(d: DadosDeck, scrum: DadosTime, kanban: DadosTime) {
   const semanas = (p: Indicadores) => Math.max(1, Math.round((Date.parse(p.periodo.fim) - Date.parse(p.periodo.inicio)) / (7 * 86400000)));
   const ps = [...scrum.periodos, ...kanban.periodos];
   const rot = ps.map((p) => (p.periodo.tipo === "sprint" ? `S${rotulo(p)}` : rotulo(p)));
-  const porSemana = (p: Indicadores, v: number | null) => (v == null ? null : p.periodo.tipo === "sprint" ? Math.round((v / semanas(p)) * 10) / 10 : v);
+  const porSemana = (p: Indicadores, v: number | null) => (v == null ? null : semanas(p) > 1 ? Math.round((v / semanas(p)) * 10) / 10 : v);
   const marco = scrum.periodos.length - 0.5;
   const nome = nomeDoTime({ ...kanban, fase: undefined });
   const L = (slide: string) => (

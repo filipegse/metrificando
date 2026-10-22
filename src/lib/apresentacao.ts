@@ -9,7 +9,7 @@ import { indicadores, indicadoresDoHistorico, type LinhaHistoricoDeck, type Indi
 
 /** `frente` preenchida quando o time é apresentado por frente (cada uma com sprints próprias). */
 /** `fase` preenchida quando o recorte mistura a fase Scrum e a fase Kanban do mesmo time. */
-export type DadosTime = { perfil: Perfil; frente?: string; fase?: "scrum" | "kanban"; periodos: Indicadores[] };
+export type DadosTime = { perfil: Perfil; frente?: string; fase?: "scrum" | "kanban"; quinzenal?: boolean; periodos: Indicadores[] };
 
 export const nomeDoTime = (t: DadosTime) =>
   [t.perfil.time, t.frente && t.frente !== t.perfil.time ? t.frente : null, t.fase ? (t.fase === "scrum" ? "Scrum" : "Kanban") : null]
@@ -51,16 +51,17 @@ export function chaveLeitura(time: string, slide: string) {
 
 /** Recorte escolhido na página inicial: sprints específicas (Scrum) ou intervalo de datas (Kanban). */
 /** `porFrente`: Nexus/Eficientes apresentados por frente em vez do time inteiro. */
-export type Recorte = { sprints?: string[]; de?: string; ate?: string; porFrente?: boolean };
+export type Recorte = { sprints?: string[]; de?: string; ate?: string; porFrente?: boolean; quinzenal?: boolean };
 
 /** Lê `s_DSR=123,124`, `de_EFC=2026-09-01&ate_EFC=2026-10-15` e `f_NXS=frentes` da URL. */
 export function recortesDaUrl(q: Record<string, string | undefined>): Record<string, Recorte> {
   const r: Record<string, Recorte> = {};
   for (const [k, v] of Object.entries(q)) {
-    const m = /^(s|de|ate|f)_([A-Z0-9]+)$/.exec(k);
+    const m = /^(s|de|ate|f|g)_([A-Z0-9]+)$/.exec(k);
     if (!m || !v) continue;
     const alvo = (r[m[2]] ??= {});
     if (m[1] === "f") alvo.porFrente = v === "frentes";
+    else if (m[1] === "g") alvo.quinzenal = v === "quinzena";
     else if (m[1] === "s") alvo.sprints = v.split(",").filter(Boolean);
     else alvo[m[1] as "de" | "ate"] = v;
   }
@@ -126,12 +127,14 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
         return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, (h.inicio ?? h.fim).slice(0, 10), h.fim.slice(0, 10)) };
       });
       const todos = [...coletados, ...semDuplicar(coletados, hist)].sort((a, b) => Date.parse(a.periodo.fim) - Date.parse(b.periodo.fim));
-      const sprints = todos.filter((i) => i.periodo.tipo === "sprint"), semanas = todos.filter((i) => i.periodo.tipo === "semana");
+      const sprints = todos.filter((i) => i.periodo.tipo === "sprint");
+      const semanas = r.quinzenal ? agregarQuinzenas(todos.filter((i) => i.periodo.tipo === "semana"), perfil.ancoraQuinzena) : todos.filter((i) => i.periodo.tipo === "semana");
+      const quinzenal = r.quinzenal && semanas.length > 0 ? true : undefined;
       // Recorte que atravessa a migração Scrum → Kanban: um bloco por fase, sem misturar sprint com semana.
       if (sprints.length && semanas.length) {
         times.push({ perfil, frente, fase: "scrum", periodos: sprints });
-        times.push({ perfil, frente, fase: "kanban", periodos: semanas });
-      } else times.push({ perfil, frente, periodos: todos });
+        times.push({ perfil, frente, fase: "kanban", quinzenal, periodos: semanas });
+      } else times.push({ perfil, frente, quinzenal, periodos: sprints.length ? sprints : semanas });
     }
   }
   const leituras: Record<string, string> = {};
@@ -184,4 +187,51 @@ export function deckDemo(deck: string, projetos: string[], recortes: Record<stri
     return [{ perfil, frente, periodos }];
   }).flat());
   return { deck, rotulo, times, leituras: {}, demo: true };
+}
+
+/** Quinzenas fixas a partir do sábado-âncora do time (mesmo corte da planilha Kanban: EFC 20/06–03/07, IC 27/06–10/07…). */
+const DIA = 86400000;
+const ddmm = (t: number) => new Date(t).toISOString().slice(0, 10).split("-").reverse().slice(0, 2).join("/");
+
+/**
+ * Junta semanas em quinzenas. Contagens e pontos somam; percentuais do tech lead e ganho SDD são ponderados
+ * (por itens e por pontos); tempo de ciclo é a média ponderada por itens dos P50/P85 semanais (aproximação:
+ * o percentil da quinzena exigiria os itens); saúde é a média das semanas com resposta.
+ */
+export function agregarQuinzenas(semanas: Indicadores[], ancora = "2026-06-20"): Indicadores[] {
+  const ANCORA_QUINZENA = Date.parse(ancora);
+  const grupos = new Map<number, Indicadores[]>();
+  for (const s of semanas) {
+    const k = Math.floor((Date.parse(s.periodo.inicio.slice(0, 10)) - ANCORA_QUINZENA) / (14 * DIA));
+    grupos.set(k, [...(grupos.get(k) ?? []), s]);
+  }
+  const soma = (xs: (number | null | undefined)[]) => (xs.some((x) => x != null) ? xs.reduce<number>((a, x) => a + (x ?? 0), 0) : null);
+  const ponderada = (xs: [number | null | undefined, number][]) => {
+    const v = xs.filter(([x]) => x != null) as [number, number][];
+    const p = v.reduce((a, [, w]) => a + w, 0);
+    return v.length ? (p ? v.reduce((a, [x, w]) => a + x * w, 0) / p : v.reduce((a, [x]) => a + x, 0) / v.length) : null;
+  };
+  const media = (xs: (number | null)[]) => ponderada(xs.map((x) => [x, 1]));
+  const somaMapa = (ms: Record<string, number>[]) => ms.reduce<Record<string, number>>((a, m) => { for (const [k, v] of Object.entries(m)) a[k] = (a[k] ?? 0) + v; return a; }, {});
+  return [...grupos.entries()].sort(([a], [b]) => a - b).map(([k, ps]) => {
+    const ini = ANCORA_QUINZENA + k * 14 * DIA, fim = ini + 13 * DIA;
+    const nome = `${ddmm(ini)}–${ddmm(fim)}/${new Date(fim).getUTCFullYear()}`;
+    const base = ps[ps.length - 1];
+    return {
+      ...base,
+      periodo: { ...base.periodo, periodo_id: `q:${base.periodo.frente ?? ""}:${nome}`, nome, inicio: new Date(ini).toISOString(), fim: new Date(fim).toISOString() },
+      entrega: null, extras: null,
+      ptsSdd: ps.reduce((a, p) => a + p.ptsSdd, 0), ptsSemSdd: ps.reduce((a, p) => a + p.ptsSemSdd, 0),
+      itensEntregues: ps.reduce((a, p) => a + p.itensEntregues, 0),
+      cycleP50: ponderada(ps.map((p) => [p.cycleP50, p.itensEntregues])), cycleP85: ponderada(ps.map((p) => [p.cycleP85, p.itensEntregues])),
+      porPlanejamento: somaMapa(ps.map((p) => p.porPlanejamento)), porTipo: somaMapa(ps.map((p) => p.porTipo)), porRoadmap: somaMapa(ps.map((p) => p.porRoadmap)),
+      chamados: soma(ps.map((p) => p.chamados)), chamadosN3: soma(ps.map((p) => p.chamadosN3)), trabalhoN3: soma(ps.map((p) => p.trabalhoN3)),
+      resolucaoP50: ponderada(ps.map((p) => [p.resolucaoP50, p.chamados ?? 0])),
+      produtividade: media(ps.map((p) => p.produtividade)), motivacao: media(ps.map((p) => p.motivacao)),
+      esforcoSdd: soma(ps.map((p) => p.esforcoSdd)), ganhoSdd: ponderada(ps.map((p) => [p.ganhoSdd, p.ptsSdd])),
+      pctItensTl: ponderada(ps.map((p) => [p.pctItensTl, p.itensEntregues])), pctPtsTl: ponderada(ps.map((p) => [p.pctPtsTl, p.ptsSdd])),
+      horaExtraH: soma(ps.map((p) => p.horaExtraH)), itensHoraExtra: soma(ps.map((p) => p.itensHoraExtra)),
+      capacidade: soma(ps.map((p) => p.capacidade)) ?? undefined,
+    };
+  });
 }

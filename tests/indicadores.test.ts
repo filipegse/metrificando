@@ -98,3 +98,19 @@ describe("semana Kanban e tech lead", () => {
     expect(tlEmDestaque({ pctItensTl: 0.2, pctPtsTl: 0.29 })).toBe(false);
   });
 });
+
+import { agregarQuinzenas } from "../src/lib/apresentacao";
+describe("quinzenas", () => {
+  const sem = (inicio: string, itens: number, p85: number) => ({
+    periodo: { periodo_id: inicio, nome: inicio, tipo: "semana", inicio, fim: inicio, frente: "" }, entrega: null, extras: null,
+    ptsSdd: itens * 2, ptsSemSdd: itens * 3, itensEntregues: itens, cycleP50: null, cycleP85: p85,
+    porPlanejamento: { "Padrão": itens }, porTipo: {}, porRoadmap: {}, chamados: null, chamadosN3: null, trabalhoN3: null,
+    resolucaoP50: null, produtividade: null, motivacao: null,
+  }) as never;
+  it("junta pares de semanas no corte da planilha", () => {
+    const q = agregarQuinzenas([sem("2026-10-03", 2, 10), sem("2026-10-10", 6, 2), sem("2026-10-17", 1, 1)], "2026-06-27");
+    expect(q).toHaveLength(2);
+    expect(q[0].periodo.nome).toBe("03/10–16/10/2026");
+    expect(q[0]).toMatchObject({ itensEntregues: 8, ptsSdd: 16, cycleP85: 4, porPlanejamento: { "Padrão": 8 } });
+  });
+});

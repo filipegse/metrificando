@@ -34,6 +34,8 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
   const [recortes, setRecortes] = useState<Record<string, Recorte>>({});
   const [personalizar, setPersonalizar] = useState(() => Object.keys(inicial).some((k) => /^(s|de|ate)_/.test(k)));
   // Times com frentes (Nexus, Eficientes): deck geral ou por frente.
+  // Times Kanban: semanas (sáb–sex) ou quinzenas no deck.
+  const [quinzenal, setQuinzenal] = useState<Set<string>>(() => new Set(Object.keys(inicial).filter((k) => k.startsWith("g_") && inicial[k] === "quinzena").map((k) => k.slice(2))));
   const [porFrente, setPorFrente] = useState<Set<string>>(() => new Set(Object.keys(inicial).filter((k) => k.startsWith("f_") && inicial[k] === "frentes").map((k) => k.slice(2))));
 
   // Trocar o trimestre recalcula o recorte padrão de todos os times.
@@ -63,6 +65,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
   const destino = useMemo(() => {
     const q = new URLSearchParams({ trimestre, times: selecionados.map((c) => c.projeto).join(",") });
     for (const c of selecionados) if (porFrente.has(c.projeto)) q.set(`f_${c.projeto}`, "frentes");
+    for (const c of selecionados) if (quinzenal.has(c.projeto)) q.set(`g_${c.projeto}`, "quinzena");
     if (personalizar) {
       for (const c of selecionados) {
         const r = recortes[c.projeto];
@@ -72,7 +75,7 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
       }
     }
     return `/apresentacao?${q.toString()}`;
-  }, [trimestre, selecionados, recortes, personalizar, porFrente]);
+  }, [trimestre, selecionados, recortes, personalizar, porFrente, quinzenal]);
 
   return (
     <>
@@ -111,6 +114,20 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
                       <label key={v} className={`chip ${(v === "frentes") === porFrente.has(c.projeto) ? "ativo" : ""}`}>
                         <input type="radio" name={`f_${c.projeto}`} checked={(v === "frentes") === porFrente.has(c.projeto)}
                           onChange={() => setPorFrente((s) => { const n = new Set(s); v === "frentes" ? n.add(c.projeto) : n.delete(c.projeto); return n; })} />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {ativo && c.metodologia === "kanban" && (
+                <div className="recorte" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <div className="recorte-titulo">Intervalo</div>
+                  <div className="alternador" role="radiogroup">
+                    {[["semana", "Semanal"], ["quinzena", "Quinzenal"]].map(([v, r]) => (
+                      <label key={v} className={`chip ${(v === "quinzena") === quinzenal.has(c.projeto) ? "ativo" : ""}`}>
+                        <input type="radio" name={`g_${c.projeto}`} checked={(v === "quinzena") === quinzenal.has(c.projeto)}
+                          onChange={() => setQuinzenal((s) => { const n = new Set(s); v === "quinzena" ? n.add(c.projeto) : n.delete(c.projeto); return n; })} />
                         {r}
                       </label>
                     ))}

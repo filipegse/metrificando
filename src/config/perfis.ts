@@ -47,6 +47,8 @@ export type Perfil = {
   time: string;
   projeto: string;
   metodologia: "scrum" | "kanban";
+  /** Sábado que abre a primeira quinzena (mesmo corte da planilha Kanban). */
+  ancoraQuinzena?: string;
   periodo: "sprint" | "semana_sab_sex";
   validoDe?: string;
   campoFrente: CampoFrente | null;
@@ -85,7 +87,7 @@ export const PERFIS: Perfil[] = [
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Nexus", papel: "chamado", naSprint: false }],
   },
   {
-    time: "Rematrix", teamRetroId: "4dG5bApVdvVffVbcJlCNgA", projeto: "IC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-09-09",
+    time: "Rematrix", teamRetroId: "4dG5bApVdvVffVbcJlCNgA", projeto: "IC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-09-09", ancoraQuinzena: "2026-06-27",
     campoFrente: null, mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [
       { projeto: "SC", mapa: S.SUPORTE_SC, statusResolucao: "Resolvido", papel: "chamado", naSprint: false },
@@ -93,7 +95,7 @@ export const PERFIS: Perfil[] = [
     ],
   },
   {
-    time: "Eficientes", teamRetroId: "5AdSqS9J5M8Zk9pLNLZwoG", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29",
+    time: "Eficientes", teamRetroId: "5AdSqS9J5M8Zk9pLNLZwoG", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29", ancoraQuinzena: "2026-06-20",
     campoFrente: { id: CAMPOS.frente, nome: "Frente" }, frentes: ["Pedagógico", "Folha de Professores"],
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
     suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],

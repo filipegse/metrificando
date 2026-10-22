@@ -53,7 +53,7 @@
 .leitura textarea::placeholder { color: #9fb1ad; }
 .leitura .estado { position: absolute; right: 0; bottom: -14px; font-size: 10px; color: var(--muted); }
 .leitura .estado.erro { color: var(--atencao); }
-table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-layout: fixed; border-collapse: collapse; font-size: 15px; }
+table.matriz { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 15px; }
 .matriz th:first-child, .matriz td:first-child { width: 250px; }
 .matriz th { background: var(--preto); color: var(--verde); padding: 8px; font-weight: 600; }
 .matriz th:first-child { text-align: left; }
@@ -62,7 +62,7 @@ table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-
 .matriz tr:nth-child(even) td { background: var(--fundo-suave); }
 .s-bom { color: var(--petroleo); font-weight: 700; } .s-atencao { color: var(--atencao); font-weight: 700; }
 .s-ruim { color: var(--atencao); font-weight: 700; text-decoration: underline; } .s-neutro { color: var(--cinza-verde); }
-.cards { position: absolute; left: 60px; right: 60px; bottom: 46px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.cards { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .card { background: var(--fundo-suave); border: 1px solid var(--linha); border-top: 4px solid var(--verde-2); border-radius: 10px; padding: 12px 14px; }
 .card h4 { margin: 0 0 4px; font-size: 15px; }
 .blocos { position: absolute; left: 60px; right: 60px; top: 150px; bottom: 50px; display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
@@ -88,3 +88,8 @@ table.matriz { position: absolute; left: 60px; top: 160px; width: 1160px; table-
 }
 .quadro4 { position: absolute; left: 60px; right: 60px; top: 160px; bottom: 120px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
 .quadro4 h3 { font-size: 13px; color: var(--muted); margin: 0; font-weight: 700; }
+
+/* Tabela de indicadores e caixas de leitura no mesmo fluxo: a tabela nunca fica por baixo das caixas. */
+.matriz-area { position: absolute; left: 60px; right: 60px; top: 160px; bottom: 46px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+.matriz-area.densa table.matriz { font-size: 13px; }
+.matriz-area.densa .matriz td, .matriz-area.densa .matriz th { padding-top: 4px; padding-bottom: 4px; }
