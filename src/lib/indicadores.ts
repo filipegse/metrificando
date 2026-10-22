@@ -37,6 +37,8 @@ export type Indicadores = {
   capacidade?: number;
   ganhoSdd?: number | null;
   historico?: boolean;
+  /** Histórico: se a composição veio em pontos ou em quantidade de itens. */
+  medidaComposicao?: Partial<Record<"porPlanejamento" | "porTipo" | "porRoadmap", "pontos" | "itens" | null>>;
 };
 
 export type Semaforo = "bom" | "atencao" | "ruim" | "neutro";
@@ -138,19 +140,37 @@ export function corGanho(v: number | null | undefined): Semaforo {
   return v >= 0.195 ? "bom" : v >= 0.05 ? "atencao" : "ruim";
 }
 
-export type LinhaHistoricoDeck = {
+import { CATEGORIAS, colunaDe, type Grupo } from "./composicao";
+
+export type LinhaHistoricoDeck = Record<string, unknown> & {
   nome: string; frente: string; tipo: string; inicio: string | null; fim: string;
   entrega: number | null; extras: number | null; pts_sdd: number | null; esforco_sdd: number | null; pts_sem_sdd: number | null;
   ganho_sdd: number | null; itens_entregues: number | null; cycle_p50: number | null; cycle_p85: number | null;
   produtividade: number | null; motivacao: number | null;
 };
 
+/** Composição do histórico: pontos por categoria; sem pontos no período, usa a quantidade de itens. */
+function composicaoDe(h: LinhaHistoricoDeck, grupo: Grupo): { valores: Record<string, number>; medida: "pontos" | "itens" | null } {
+  const cats = CATEGORIAS.filter((c) => c.grupo === grupo);
+  for (const medida of ["pts", "itens"] as const) {
+    const valores: Record<string, number> = {};
+    for (const c of cats) {
+      const v = h[colunaDe(grupo, c.chave, medida)];
+      if (typeof v === "number") valores[c.deck] = v;
+    }
+    if (Object.values(valores).some((v) => v > 0)) return { valores, medida: medida === "pts" ? "pontos" : "itens" };
+  }
+  return { valores: {}, medida: null };
+}
+
 export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
+  const tipo = composicaoDe(h, "tipo"), plan = composicaoDe(h, "planejamento"), rm = composicaoDe(h, "roadmap");
   return {
     periodo: { periodo_id: `h:${h.nome}`, nome: h.nome, tipo: h.tipo, inicio: h.inicio ?? h.fim, fim: h.fim, frente: h.frente },
     entrega: h.entrega, extras: h.extras, ptsSdd: h.pts_sdd ?? 0, ptsSemSdd: h.pts_sem_sdd ?? 0,
     itensEntregues: h.itens_entregues ?? 0, cycleP50: h.cycle_p50, cycleP85: h.cycle_p85,
-    porPlanejamento: {}, porTipo: {}, porRoadmap: {},
+    porPlanejamento: plan.valores, porTipo: tipo.valores, porRoadmap: rm.valores,
+    medidaComposicao: { porPlanejamento: plan.medida, porTipo: tipo.medida, porRoadmap: rm.medida },
     chamados: null, chamadosN3: null, trabalhoN3: null, resolucaoP50: null,
     produtividade: h.produtividade, motivacao: h.motivacao,
     esforcoSdd: h.esforco_sdd, ganhoSdd: h.ganho_sdd, historico: true,

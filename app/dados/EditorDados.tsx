@@ -2,6 +2,7 @@
 import { Icone } from "../componentes/Icone";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lerUsuario, salvarUsuario } from "./usuario";
+import { CATEGORIAS, colunaDe, ROTULO_GRUPO } from "@/lib/composicao";
 
 type Linha = Record<string, string | number | null> & { time: string; frente: string; nome: string };
 type Registro = { id: number; quando: string; usuario: string; acao: string; frente: string; nome: string;
@@ -26,8 +27,12 @@ const COLUNAS: { campo: string; rotulo: string; tipo: "texto" | "data" | "numero
   { campo: "produtividade", rotulo: "Produtiv. %", tipo: "fracao" },
   { campo: "motivacao", rotulo: "Motivação %", tipo: "fracao" },
 ];
-const TIPO_DE = Object.fromEntries(COLUNAS.map((c) => [c.campo, c.tipo]));
-const ROTULO_DE: Record<string, string> = Object.fromEntries(COLUNAS.map((c) => [c.campo, c.rotulo]));
+// Composição (22 colunas): exibidas só quando o usuário pede.
+const COLUNAS_COMPOSICAO = CATEGORIAS.flatMap((c) => (["pts", "itens"] as const).map((m) => ({
+  campo: colunaDe(c.grupo, c.chave, m), rotulo: `${c.rotulo} ${m === "pts" ? "pts" : "itens"}`, tipo: "numero" as const, grupo: ROTULO_GRUPO[c.grupo],
+})));
+const TIPO_DE = Object.fromEntries([...COLUNAS, ...COLUNAS_COMPOSICAO].map((c) => [c.campo, c.tipo]));
+const ROTULO_DE: Record<string, string> = Object.fromEntries([...COLUNAS, ...COLUNAS_COMPOSICAO].map((c) => [c.campo, c.rotulo]));
 
 /** Valor do banco → texto do campo. */
 function paraTela(campo: string, v: unknown): string {
@@ -60,6 +65,8 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
   const [usuario, setUsuario] = useState("");
   const [msg, setMsg] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [verComposicao, setVerComposicao] = useState(false);
+  const colunas = verComposicao ? [...COLUNAS, ...COLUNAS_COMPOSICAO] : COLUNAS;
 
   useEffect(() => setUsuario(lerUsuario()), []);
   const chaveDe = (l: Linha) => `${l.frente}|${l.nome}`;
@@ -113,6 +120,7 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
         <label>Seu nome (registrado nas alterações)
           <input value={usuario} placeholder="Ex.: Filipe" onChange={(e) => { setUsuario(e.target.value); salvarUsuario(e.target.value); }} className={semNome ? "obrigatorio" : ""} />
         </label>
+        <label className="opcao-linha"><input type="checkbox" checked={verComposicao} onChange={(e) => setVerComposicao(e.target.checked)} /> Mostrar composição (tipo, planejamento, roadmap)</label>
         <span className="sub">{carregando ? "carregando…" : `${visiveis.length} período(s)`}</span>
         <button type="button" className="link perigo" disabled={!visiveis.length} onClick={() => {
           const alvo = frente === "*" ? `todos os períodos de ${time}` : `os períodos de ${time}${frente ? ` · ${frente}` : " (time inteiro)"}`;
@@ -126,14 +134,14 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
       <section className="card">
         <div className="tabela-rolagem">
           <table className="editavel">
-            <thead><tr><th>Frente</th>{COLUNAS.map((c) => <th key={c.campo}>{c.rotulo}</th>)}<th /></tr></thead>
+            <thead><tr><th>Frente</th>{colunas.map((c) => <th key={c.campo} title={"grupo" in c ? String(c.grupo) : undefined}>{c.rotulo}</th>)}<th /></tr></thead>
             <tbody>
               {visiveis.map((l) => {
                 const k = chaveDe(l), r = rascunho[k] ?? {}, sujo = Object.keys(r).length > 0;
                 return (
                   <tr key={k} className={sujo ? "sujo" : ""}>
                     <td className="frente">{l.frente || "—"}</td>
-                    {COLUNAS.map((c) => {
+                    {colunas.map((c) => {
                       const valor = r[c.campo] ?? paraTela(c.campo, l[c.campo]);
                       const mudar = (v: string) => setRascunho((x) => ({ ...x, [k]: { ...x[k], [c.campo]: v } }));
                       return (
@@ -156,7 +164,7 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
                   </tr>
                 );
               })}
-              {!visiveis.length && !carregando && <tr><td colSpan={COLUNAS.length + 2} className="vazio">Nenhum período importado para esse filtro.</td></tr>}
+              {!visiveis.length && !carregando && <tr><td colSpan={colunas.length + 2} className="vazio">Nenhum período importado para esse filtro.</td></tr>}
             </tbody>
           </table>
         </div>

@@ -1,7 +1,12 @@
 // Importação do histórico das planilhas (CSV exportado do Google Sheets).
 // Regra do vault: nunca usar posição de coluna; o mapa é montado pelos títulos do cabeçalho.
 
-export type Campo =
+import { apelidosDe, CATEGORIAS, colunaDe, ROTULO_GRUPO, type Grupo } from "./composicao";
+
+/** Campos de composição: tipo_historia_pts, plan_extra_itens, rm_grandes_pts… */
+export type CampoComposicao = `${"tipo" | "plan" | "rm"}_${string}_${"pts" | "itens"}`;
+
+export type Campo = CampoComposicao
   | "time" | "nome" | "inicio" | "fim" | "entrega" | "extras" | "pts_sdd" | "esforco_sdd" | "pts_sem_sdd"
   | "esforco_sem_sdd" | "ganho_sdd" | "itens_entregues" | "cycle_p50" | "cycle_p85" | "produtividade" | "motivacao"
   | "prod_coletiva" | "prod_individual" | "mot_coletiva" | "mot_individual" | "itens_total";
@@ -11,7 +16,8 @@ export const AUXILIARES: Campo[] = ["prod_coletiva", "prod_individual", "mot_col
 
 // `exatos`: apelidos que só valem por igualdade (evita casar "extras" com "Total de itens extras").
 // `escala`: notas 1–5 do health check, convertidas em fração ÷ 5 (como no TeamRetro).
-export const CAMPOS: { campo: Campo; rotulo: string; tipo: "texto" | "data" | "numero" | "fracao" | "escala"; apelidos: string[]; exatos?: string[] }[] = [
+export type DefCampo = { campo: Campo; rotulo: string; tipo: "texto" | "data" | "numero" | "fracao" | "escala"; apelidos: string[]; exatos?: string[]; grupo?: Grupo };
+export const CAMPOS: DefCampo[] = [
   { campo: "time", rotulo: "Time / frente", tipo: "texto", apelidos: ["time", "squad", "time ou frente", "frente"] },
   { campo: "nome", rotulo: "Sprint / ciclo", tipo: "texto", apelidos: ["sprint", "nome da sprint", "ciclo", "nome do ciclo"] },
   { campo: "inicio", rotulo: "Início", tipo: "data", apelidos: ["data inicio", "inicio", "data de inicio", "inicio da sprint", "inicio do ciclo"] },
@@ -36,6 +42,15 @@ export const CAMPOS: { campo: Campo; rotulo: string; tipo: "texto" | "data" | "n
   { campo: "mot_coletiva", rotulo: "Motivação coletiva (1–5)", tipo: "escala", apelidos: ["motivacao coletiva"] },
   { campo: "mot_individual", rotulo: "Motivação individual (1–5)", tipo: "escala", apelidos: ["motivacao individual"] },
 ];
+
+// Composição (pontos e itens concluídos por categoria), reconhecida pelos títulos; ajustável no mapeamento.
+for (const c of CATEGORIAS) for (const m of ["pts", "itens"] as const) {
+  CAMPOS.push({
+    campo: colunaDe(c.grupo, c.chave, m) as CampoComposicao, grupo: c.grupo, tipo: "numero",
+    rotulo: `${c.rotulo} · ${m === "pts" ? "pontos" : "itens"}`, apelidos: apelidosDe(c, m),
+  });
+}
+export { ROTULO_GRUPO };
 
 /** Sobe quando as regras de reconhecimento de colunas mudam (invalida mapeamentos salvos antes). */
 export const VERSAO_MAPA = 2;

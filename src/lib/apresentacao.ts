@@ -1,5 +1,8 @@
 import { PERFIS, type Perfil } from "../config/perfis";
 import { db } from "./db";
+import { COLUNAS_METRICAS } from "./historico";
+
+const COLUNAS_HIST_DECK = `nome, frente, tipo, inicio::text as inicio, fim::text as fim, ${COLUNAS_METRICAS.map((c) => `${c}::float as ${c}`).join(", ")}`;
 import { carregarCalendario } from "./coleta";
 import { capacidade, type AlocacaoCap, type AusenciaCap } from "./capacidade";
 import { indicadores, indicadoresDoHistorico, type LinhaHistoricoDeck, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
@@ -100,11 +103,9 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
       select periodo_id, frente, produtividade::float, motivacao::float, respostas
       from saude_time where time = ${perfil.time} and periodo_id = any(${ids})`) as LinhaSaude[];
     const linhasHist = (r.sprints
-      ? await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
-            pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
+      ? await sql`select ${sql.unsafe(COLUNAS_HIST_DECK)}
           from historico_periodos where time = ${perfil.time} and ('h:' || nome) = any(${r.sprints})`
-      : await sql`select nome, frente, tipo, inicio::text, fim::text, entrega::float, extras::float, pts_sdd::float, esforco_sdd::float,
-            pts_sem_sdd::float, ganho_sdd::float, itens_entregues::float, cycle_p50::float, cycle_p85::float, produtividade::float, motivacao::float
+      : await sql`select ${sql.unsafe(COLUNAS_HIST_DECK)}
           from historico_periodos where time = ${perfil.time} and fim >= ${de.slice(0, 10)}::date and fim < ${ate.slice(0, 10)}::date`) as LinhaHistoricoDeck[];
 
     // Blocos do deck: frentes com sprints próprias (TRG), frentes escolhidas (Nexus/Eficientes) ou o time inteiro.

@@ -199,3 +199,17 @@ alter table pessoas add constraint pessoas_vinculo_check check (vinculo in ('fun
 -- Data em que a pessoa passou a ser funcionária (contratação direta ou efetivação de terceirizado):
 -- ponto de partida da contagem de férias. Terceirizados ficam sem data.
 alter table pessoas add column if not exists admissao date;
+
+-- Composição do período no histórico (pontos e itens concluídos por tipo, planejamento e roadmap).
+alter table historico_periodos
+  add column if not exists tipo_historia_pts numeric, add column if not exists tipo_historia_itens numeric,
+  add column if not exists tipo_tecnologia_pts numeric, add column if not exists tipo_tecnologia_itens numeric,
+  add column if not exists tipo_correcao_pts numeric, add column if not exists tipo_correcao_itens numeric,
+  add column if not exists tipo_operacional_pts numeric, add column if not exists tipo_operacional_itens numeric,
+  add column if not exists plan_planejado_pts numeric, add column if not exists plan_planejado_itens numeric,
+  add column if not exists plan_extra_pts numeric, add column if not exists plan_extra_itens numeric,
+  add column if not exists plan_bonus_pts numeric, add column if not exists plan_bonus_itens numeric,
+  add column if not exists rm_grandes_pts numeric, add column if not exists rm_grandes_itens numeric,
+  add column if not exists rm_pequenas_pts numeric, add column if not exists rm_pequenas_itens numeric,
+  add column if not exists rm_evolucao_pts numeric, add column if not exists rm_evolucao_itens numeric,
+  add column if not exists rm_suporte_rotina_pts numeric, add column if not exists rm_suporte_rotina_itens numeric;

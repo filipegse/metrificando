@@ -83,3 +83,25 @@ describe("tempo de ciclo da planilha", async () => {
   });
   it("valores pequenos já são dias", () => expect(unidadeCiclo([2.3, 4.1, 5])).toBe("dias"));
 });
+
+describe("composição (tipo, planejamento, roadmap)", async () => {
+  const { indicadoresDoHistorico } = await import("../src/lib/indicadores");
+  const csv = [
+    "Squad,Sprint,Fim,Qtd Pontos Concluídos Planejados,Qtd Pontos Concluídos Extras,Qtd Pontos Concluídos Bônus,Qtd Pontos Concluídos História,Qtd Pontos Concluídos Tecnologia,Qtd Pontos Concluídos Bug,Grandes entregas concluídos,Pequenas entregas concluídos,Evolução técnica concluídos,Suporte/rotina concluídos",
+    'DSR,DSR 61,02/06/2026,"20,5",5,2,"18,5",6,3,4,3,1,2',
+  ].join("\n");
+  const d = lerCsv(csv);
+  const m = sugerirMapa(d[0]);
+  it("reconhece as colunas de composição pelo título", () => {
+    expect(m).toMatchObject({ plan_planejado_pts: 3, plan_extra_pts: 4, plan_bonus_pts: 5, tipo_historia_pts: 6, tipo_tecnologia_pts: 7, tipo_correcao_pts: 8,
+      rm_grandes_itens: 9, rm_pequenas_itens: 10, rm_evolucao_itens: 11, rm_suporte_rotina_itens: 12 });
+  });
+  it("o deck usa pontos quando houver e itens como reserva", () => {
+    const l = montarLinhas(d, 1, m, { tipo: "sprint", duracaoDias: 14 }).linhas[0];
+    const ind = indicadoresDoHistorico({ ...l, inicio: null, frente: "" } as never);
+    expect(ind.porPlanejamento).toEqual({ Planejado: 20.5, Extra: 5, "Bônus": 2 });
+    expect(ind.porTipo).toMatchObject({ entrega: 18.5, tecnologia: 6, bug: 3 });
+    expect(ind.porRoadmap).toEqual({ "Grandes entregas": 4, "Pequenas entregas": 3, "Evolução técnica": 1, "Suporte/rotina": 2 });
+    expect(ind.medidaComposicao).toEqual({ porPlanejamento: "pontos", porTipo: "pontos", porRoadmap: "itens" });
+  });
+});

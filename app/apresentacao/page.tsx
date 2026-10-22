@@ -27,6 +27,12 @@ const rotulo = (p: Indicadores) => (p.periodo.nome ? numeroDe(p.periodo.nome) ??
 
 const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecnologia", bug: "Correção", operacional: "Operacional", ajuste: "Ajuste", outro: "Outro" };
 
+/** Rodapé de medida quando algum período do histórico trouxe a composição em itens (e não em pontos). */
+function notaMedida(ps: Indicadores[], campo: "porPlanejamento" | "porTipo" | "porRoadmap") {
+  const itens = ps.filter((p) => p.medidaComposicao?.[campo] === "itens").map(rotulo);
+  return itens.length ? ` · em quantidade de itens: ${itens.join(", ")}` : "";
+}
+
 function series(periodos: Indicadores[], campo: "porPlanejamento" | "porTipo" | "porRoadmap", nomes?: Record<string, string>) {
   const chaves = [...new Set(periodos.flatMap((p) => Object.keys(p[campo])))];
   return chaves.map((c) => {
@@ -200,7 +206,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   if (scrum) {
     slides.push(
       <Slide key="comp-plan" rodape={rodape} demo={d.demo}>
-        <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de planejamento" sub="Composição da sprint com base em seu planejamento" />
+        <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de planejamento" sub={`Composição da sprint com base em seu planejamento${notaMedida(ps, "porPlanejamento")}`} />
         <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porPlanejamento")} /></div>
         <Faixa slide="comp-plan" />
       </Slide>,
@@ -209,12 +215,12 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
 
   slides.push(
     <Slide key="comp-tipo" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de item" sub={`Comparativo entre ${unidade.toLowerCase()} do trimestre`} />
+      <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de item" sub={`Comparativo entre ${unidade.toLowerCase()} do trimestre${notaMedida(ps, "porTipo")}`} />
       <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porTipo", TIPOS)} /></div>
       <Faixa slide="comp-tipo" />
     </Slide>,
     <Slide key="roadmap" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="ROADMAP" titulo="Proporção dos pontos por categoria de roadmap" sub="Realizado (entrega)" />
+      <Cabecalho t={t} eyebrow="ROADMAP" titulo="Proporção dos pontos por categoria de roadmap" sub={`Realizado (entrega)${notaMedida(ps, "porRoadmap")}`} />
       <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porRoadmap")} /></div>
       <Faixa slide="roadmap" />
     </Slide>,

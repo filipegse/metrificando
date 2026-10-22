@@ -209,3 +209,7 @@ table.editavel tr.sujo td.frente { box-shadow: inset 3px 0 0 var(--verde-2); }
 main select.vinculo { min-height: 30px; padding: 3px 26px 3px 8px; font-size: var(--t-xs); border-radius: var(--r-pill); }
 main select.vinculo.terceirizado { background: color-mix(in srgb, var(--roxo) 12%, var(--card)); border-color: color-mix(in srgb, var(--roxo) 40%, var(--line-forte)); }
 main input.data-compacta { min-height: 30px; padding: 3px 6px; font-size: var(--t-xs); }
+.grupo-mapa { margin-top: var(--e-4); border-top: 1px solid var(--line); padding-top: var(--e-3); }
+.grupo-mapa summary { cursor: pointer; font-weight: 700; font-size: var(--t-sm); margin-bottom: var(--e-3); }
+.grupo-mapa summary .sub { font-weight: 400; margin: 0; }
+.tabela-rolagem td.resumo-grupo { white-space: nowrap; font-size: var(--t-xs); color: var(--muted); }

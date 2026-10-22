@@ -2,7 +2,7 @@
 import { Icone } from "../componentes/Icone";
 import { useEffect, useMemo, useState } from "react";
 import { lerUsuario } from "../dados/usuario";
-import { AUXILIARES, CAMPOS, VERSAO_MAPA, detectarCabecalho, lerCsv, montarLinhas, normalizar, sugerirMapa, type Campo } from "@/lib/importacao";
+import { AUXILIARES, CAMPOS, ROTULO_GRUPO, VERSAO_MAPA, type DefCampo, detectarCabecalho, lerCsv, montarLinhas, normalizar, sugerirMapa, type Campo } from "@/lib/importacao";
 
 const FONTES = {
   dados_sprints: { rotulo: "Planilha de Métricas — aba Dados Sprints (Scrum)", tipo: "sprint" as const, dias: 14, linha: 3 },
@@ -86,6 +86,26 @@ export function Importador() {
   const pct = (v: unknown) => (v == null ? "—" : `${String(Math.round(Number(v) * 1000) / 10).replace(".", ",")}%`);
   const fmt = (v: unknown) => (v == null ? "—" : typeof v === "number" ? String(Math.round(v * 1000) / 1000).replace(".", ",") : String(v));
 
+  const campoMapa = ({ campo, rotulo }: DefCampo) => (
+    <label key={campo} className={mapa[campo] === undefined ? "faltando" : ""}>
+      {rotulo}
+      <select value={mapa[campo] ?? ""} onChange={(e) => setMapa((m) => {
+        const n = { ...m };
+        if (e.target.value === "") delete n[campo]; else n[campo] = Number(e.target.value);
+        return n;
+      })}>
+        <option value="">— sem coluna —</option>
+        {cabecalho.map((t, i) => t.trim() && <option key={i} value={i}>{t}</option>)}
+      </select>
+    </label>
+  );
+  // Prévia: indicadores + uma coluna-resumo por grupo de composição (evita 22 colunas a mais).
+  const colunasPrevia = CAMPOS.slice(4).filter((c) => !AUXILIARES.includes(c.campo) && !c.grupo);
+  const resumoGrupo = (l: Record<string, unknown>, g: string) => {
+    const partes = CAMPOS.filter((c) => c.grupo === g && l[c.campo] != null).map((c) => `${c.rotulo.replace(" · pontos", " pts").replace(" · itens", " it.")}: ${fmt(l[c.campo])}`);
+    return partes.length ? partes.join(" · ") : "—";
+  };
+
   return (
     <div className="importador">
       <section className="card">
@@ -124,22 +144,18 @@ export function Importador() {
       {cabecalho.length > 0 && (
         <section className="card">
           <h2>Mapeamento de colunas</h2>
-          <p className="sub">Reconhecidas pelo título da linha {linhaTitulo}. Ajuste o que estiver errado; campos sem coluna ficam vazios.</p>
-          <div className="mapa">
-            {CAMPOS.map(({ campo, rotulo }) => (
-              <label key={campo} className={mapa[campo] === undefined ? "faltando" : ""}>
-                {rotulo}
-                <select value={mapa[campo] ?? ""} onChange={(e) => setMapa((m) => {
-                  const n = { ...m };
-                  if (e.target.value === "") delete n[campo]; else n[campo] = Number(e.target.value);
-                  return n;
-                })}>
-                  <option value="">— sem coluna —</option>
-                  {cabecalho.map((t, i) => t.trim() && <option key={i} value={i}>{t}</option>)}
-                </select>
-              </label>
-            ))}
-          </div>
+          <p className="sub">Reconhecidas pelo título da linha {linhaTitulo}. Ajuste o que estiver errado. Na reimportação, só os campos mapeados aqui são atualizados; os demais mantêm o valor já gravado.</p>
+          <div className="mapa">{CAMPOS.filter((c) => !c.grupo).map(campoMapa)}</div>
+          {(["tipo", "planejamento", "roadmap"] as const).map((g) => {
+            const campos = CAMPOS.filter((c) => c.grupo === g);
+            const n = campos.filter((c) => mapa[c.campo] !== undefined).length;
+            return (
+              <details key={g} className="grupo-mapa" open={n > 0}>
+                <summary>{ROTULO_GRUPO[g]} <span className="sub">({n} de {campos.length} colunas reconhecidas · pontos e itens concluídos)</span></summary>
+                <div className="mapa">{campos.map(campoMapa)}</div>
+              </details>
+            );
+          })}
         </section>
       )}
 
@@ -149,12 +165,13 @@ export function Importador() {
           <p className="sub">{resultado.linhas.length} período(s) prontos{resultado.avisos.length ? ` · ${resultado.avisos.length} linha(s) ignorada(s)` : ""}.</p>
           <div className="tabela-rolagem">
             <table>
-              <thead><tr><th>Time</th><th>Frente</th><th>Sprint/ciclo</th><th>Fim</th>{CAMPOS.slice(4).filter((c) => !AUXILIARES.includes(c.campo)).map((c) => <th key={c.campo} className="n">{c.rotulo}</th>)}</tr></thead>
+              <thead><tr><th>Time</th><th>Frente</th><th>Sprint/ciclo</th><th>Fim</th>{colunasPrevia.map((c) => <th key={c.campo} className="n">{c.rotulo}</th>)}<th>Tipo de item</th><th>Planejamento</th><th>Roadmap</th></tr></thead>
               <tbody>
                 {resultado.linhas.slice(0, 15).map((l) => (
                   <tr key={`${l.time}${l.frente}${l.nome}`}>
                     <td>{l.time}</td><td>{l.frente || "—"}</td><td>{l.nome}</td><td>{l.fim}</td>
-                    {CAMPOS.slice(4).filter((c) => !AUXILIARES.includes(c.campo)).map((c) => <td key={c.campo} className="n">{c.tipo === "fracao" || c.tipo === "escala" ? pct(l[c.campo as "entrega"]) : fmt(l[c.campo as "pts_sdd"])}</td>)}
+                    {colunasPrevia.map((c) => <td key={c.campo} className="n">{c.tipo === "fracao" || c.tipo === "escala" ? pct(l[c.campo as "entrega"]) : fmt(l[c.campo as "pts_sdd"])}</td>)}
+                    {(["tipo", "planejamento", "roadmap"] as const).map((g) => <td key={g} className="resumo-grupo">{resumoGrupo(l as Record<string, unknown>, g)}</td>)}
                   </tr>
                 ))}
               </tbody>
