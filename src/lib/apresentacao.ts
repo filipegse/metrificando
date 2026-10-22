@@ -184,6 +184,7 @@ export function deckDemo(deck: string, projetos: string[], recortes: Record<stri
           inicio: new Date(Date.UTC(2026, 6, 1 + k * 14)).toISOString(), fim: new Date(Date.UTC(2026, 6, 14 + k * 14)).toISOString() } }));
       return [{ perfil, frente, fase: "scrum" as const, periodos: sprints }, { perfil, frente, fase: "kanban" as const, periodos }];
     }
+    if (recortes[perfil.projeto]?.quinzenal && !scrum) return [{ perfil, frente, quinzenal: true, periodos: agregarQuinzenas(periodos, perfil.ancoraQuinzena) }];
     return [{ perfil, frente, periodos }];
   }).flat());
   return { deck, rotulo, times, leituras: {}, demo: true };
@@ -194,7 +195,8 @@ const DIA = 86400000;
 const ddmm = (t: number) => new Date(t).toISOString().slice(0, 10).split("-").reverse().slice(0, 2).join("/");
 
 /**
- * Junta semanas em quinzenas. Contagens e pontos somam; percentuais do tech lead e ganho SDD são ponderados
+ * Junta semanas em quinzenas mostrando a MÉDIA SEMANAL da quinzena: contagens, pontos, composição, hora extra,
+ * chamados e capacidade são a média das semanas do par; percentuais do tech lead e ganho SDD são ponderados
  * (por itens e por pontos); tempo de ciclo é a média ponderada por itens dos P50/P85 semanais (aproximação:
  * o percentil da quinzena exigiria os itens); saúde é a média das semanas com resposta.
  */
@@ -216,22 +218,24 @@ export function agregarQuinzenas(semanas: Indicadores[], ancora = "2026-06-20"):
   return [...grupos.entries()].sort(([a], [b]) => a - b).map(([k, ps]) => {
     const ini = ANCORA_QUINZENA + k * 14 * DIA, fim = ini + 13 * DIA;
     const nome = `${ddmm(ini)}–${ddmm(fim)}/${new Date(fim).getUTCFullYear()}`;
-    const base = ps[ps.length - 1];
+    const base = ps[ps.length - 1], n = ps.length;
+    const med = (x: number | null) => (x == null ? null : Math.round((x / n) * 10) / 10);
+    const medMapa = (m: Record<string, number>) => Object.fromEntries(Object.entries(m).map(([c, v]) => [c, v / n]));
     return {
       ...base,
       periodo: { ...base.periodo, periodo_id: `q:${base.periodo.frente ?? ""}:${nome}`, nome, inicio: new Date(ini).toISOString(), fim: new Date(fim).toISOString() },
       entrega: null, extras: null,
-      ptsSdd: ps.reduce((a, p) => a + p.ptsSdd, 0), ptsSemSdd: ps.reduce((a, p) => a + p.ptsSemSdd, 0),
-      itensEntregues: ps.reduce((a, p) => a + p.itensEntregues, 0),
+      ptsSdd: med(ps.reduce((a, p) => a + p.ptsSdd, 0))!, ptsSemSdd: med(ps.reduce((a, p) => a + p.ptsSemSdd, 0))!,
+      itensEntregues: med(ps.reduce((a, p) => a + p.itensEntregues, 0))!,
       cycleP50: ponderada(ps.map((p) => [p.cycleP50, p.itensEntregues])), cycleP85: ponderada(ps.map((p) => [p.cycleP85, p.itensEntregues])),
-      porPlanejamento: somaMapa(ps.map((p) => p.porPlanejamento)), porTipo: somaMapa(ps.map((p) => p.porTipo)), porRoadmap: somaMapa(ps.map((p) => p.porRoadmap)),
-      chamados: soma(ps.map((p) => p.chamados)), chamadosN3: soma(ps.map((p) => p.chamadosN3)), trabalhoN3: soma(ps.map((p) => p.trabalhoN3)),
+      porPlanejamento: medMapa(somaMapa(ps.map((p) => p.porPlanejamento))), porTipo: medMapa(somaMapa(ps.map((p) => p.porTipo))), porRoadmap: medMapa(somaMapa(ps.map((p) => p.porRoadmap))),
+      chamados: med(soma(ps.map((p) => p.chamados))), chamadosN3: med(soma(ps.map((p) => p.chamadosN3))), trabalhoN3: med(soma(ps.map((p) => p.trabalhoN3))),
       resolucaoP50: ponderada(ps.map((p) => [p.resolucaoP50, p.chamados ?? 0])),
       produtividade: media(ps.map((p) => p.produtividade)), motivacao: media(ps.map((p) => p.motivacao)),
-      esforcoSdd: soma(ps.map((p) => p.esforcoSdd)), ganhoSdd: ponderada(ps.map((p) => [p.ganhoSdd, p.ptsSdd])),
+      esforcoSdd: med(soma(ps.map((p) => p.esforcoSdd))), ganhoSdd: ponderada(ps.map((p) => [p.ganhoSdd, p.ptsSdd])),
       pctItensTl: ponderada(ps.map((p) => [p.pctItensTl, p.itensEntregues])), pctPtsTl: ponderada(ps.map((p) => [p.pctPtsTl, p.ptsSdd])),
-      horaExtraH: soma(ps.map((p) => p.horaExtraH)), itensHoraExtra: soma(ps.map((p) => p.itensHoraExtra)),
-      capacidade: soma(ps.map((p) => p.capacidade)) ?? undefined,
+      horaExtraH: med(soma(ps.map((p) => p.horaExtraH))), itensHoraExtra: med(soma(ps.map((p) => p.itensHoraExtra))),
+      capacidade: med(soma(ps.map((p) => p.capacidade))) ?? undefined,
     };
   });
 }

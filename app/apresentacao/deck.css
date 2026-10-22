@@ -55,7 +55,7 @@
 .leitura .estado.erro { color: var(--atencao); }
 table.matriz { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 15px; }
 .matriz th:first-child, .matriz td:first-child { width: 250px; }
-.matriz th { background: var(--preto); color: var(--verde); padding: 8px; font-weight: 600; }
+.matriz th { background: var(--preto); color: var(--verde); padding: 8px; font-weight: 600; text-align: center; }
 .matriz th:first-child { text-align: left; }
 .matriz td { padding: 7px 8px; text-align: center; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--linha); }
 .matriz td:first-child { text-align: left; font-weight: 700; }

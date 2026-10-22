@@ -111,6 +111,6 @@ describe("quinzenas", () => {
     const q = agregarQuinzenas([sem("2026-10-03", 2, 10), sem("2026-10-10", 6, 2), sem("2026-10-17", 1, 1)], "2026-06-27");
     expect(q).toHaveLength(2);
     expect(q[0].periodo.nome).toBe("03/10–16/10/2026");
-    expect(q[0]).toMatchObject({ itensEntregues: 8, ptsSdd: 16, cycleP85: 4, porPlanejamento: { "Padrão": 8 } });
+    expect(q[0]).toMatchObject({ itensEntregues: 4, ptsSdd: 8, cycleP85: 4, porPlanejamento: { "Padrão": 4 } });
   });
 });

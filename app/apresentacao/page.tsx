@@ -91,7 +91,7 @@ function Slide({ children, escuro, rodape, demo, pedagogico }: { children: React
 function slidesDoTime(d: DadosDeck, t: DadosTime) {
   const ps = t.periodos;
   const scrum = metodologiaDe(t) === "scrum";
-  const unidade = scrum ? "Sprints" : t.quinzenal ? "Quinzenas" : "Semanas (sáb–sex)";
+  const unidade = scrum ? "Sprints" : t.quinzenal ? "Quinzenas (média semanal)" : "Semanas (sáb–sex)";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
     <Leitura deck={d.deck} time={nomeDoTime(t)} slide={slide} inicial={d.leituras[chaveLeitura(nomeDoTime(t), slide)]} demo={d.demo} placeholder={placeholder} />
@@ -183,7 +183,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   } else {
     slides.push(
       <Slide key="vazao" rodape={rodape} demo={d.demo}>
-        <Cabecalho t={t} eyebrow="VAZÃO" titulo={`Itens entregues por ${t.quinzenal ? "quinzena" : "semana"}`} sub={`${t.quinzenal ? "Quinzena (duas semanas sáb–sex) identificada pela primeira segunda-feira" : "Semana identificada pela segunda-feira · janela sábado a sexta"}${
+        <Cabecalho t={t} eyebrow="VAZÃO" titulo={t.quinzenal ? "Itens entregues por semana · média da quinzena" : "Itens entregues por semana"} sub={`${t.quinzenal ? "Média das duas semanas (sáb–sex) de cada quinzena · quinzena identificada pela primeira segunda-feira" : "Semana identificada pela segunda-feira · janela sábado a sexta"}${
           ps.some(tlEmDestaque) ? ` · tech lead com 30% ou mais: ${ps.filter(tlEmDestaque).map(rotulo).join(", ")}` : ""}`} />
         <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Itens entregues", valores: ps.map((p) => p.itensEntregues) }]} /></div>
         <Faixa slide="vazao" />
@@ -193,7 +193,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
 
   slides.push(
     <Slide key="desempenho" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="DESEMPENHO" titulo="Desempenho por pontos" sub="Pontos concluídos COM SDD e SEM SDD" />
+      <Cabecalho t={t} eyebrow="DESEMPENHO" titulo="Desempenho por pontos" sub={`Pontos concluídos COM SDD e SEM SDD${t.quinzenal ? " · média semanal de cada quinzena" : ""}`} />
       <div className="grafico"><Barras rotulos={rot} series={[{ nome: "COM SDD", valores: ps.map((p) => p.ptsSdd) }, { nome: "SEM SDD", valores: ps.map((p) => p.ptsSemSdd) }]} formato={num} /></div>
       <Faixa slide="desempenho" />
     </Slide>,
