@@ -44,3 +44,18 @@ describe("situação de férias (CLT)", () => {
     expect(tempoSemFerias(1, null, [], hoje)).toBeNull();
   });
 });
+
+describe("janelas pelo aniversário da admissão (regra confirmada)", () => {
+  // admissão 01/03/2024: cada janela de 12 meses (01/03 a 01/03) precisa de férias; aviso a partir de 01/01 da janela
+  const adm = "2024-03-01";
+  it("2ª janela (01/03/2026–01/03/2027): aviso a partir de 01/01/2027, vencida em 01/03/2027", () => {
+    const tirou1 = [f(1, "2025-07-07", "2025-07-26")];
+    expect(tempoSemFerias(1, adm, tirou1, "2026-12-31")?.nivel ?? "ok").toBe("ok");
+    expect(tempoSemFerias(1, adm, tirou1, "2027-01-01")!.nivel).toBe("atencao");
+    expect(tempoSemFerias(1, adm, tirou1, "2027-03-01")!.nivel).toBe("critico");
+  });
+  it("a data das férias anteriores não desloca as janelas seguintes", () => {
+    // férias tiradas tarde na 1ª janela (02/2026) não empurram o prazo da 2ª janela
+    expect(tempoSemFerias(1, adm, [f(1, "2026-02-02", "2026-02-21")], "2027-01-01")!.prazo).toBe("2027-03-01");
+  });
+});
