@@ -213,3 +213,6 @@ main input.data-compacta { min-height: 30px; padding: 3px 6px; font-size: var(--
 .grupo-mapa summary { cursor: pointer; font-weight: 700; font-size: var(--t-sm); margin-bottom: var(--e-3); }
 .grupo-mapa summary .sub { font-weight: 400; margin: 0; }
 .tabela-rolagem td.resumo-grupo { white-space: nowrap; font-size: var(--t-xs); color: var(--muted); }
+
+/* Tech lead com 30% ou mais dos itens ou pontos do período */
+table.editavel td.destaque-tl input { color: var(--perigo, #c74f24); font-weight: 700; }

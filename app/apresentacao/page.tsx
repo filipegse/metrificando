@@ -3,7 +3,7 @@
 import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
 import { carregarDeck, chaveLeitura, deckDemo, metodologiaDe, nomeDoTime, recortesDaUrl, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
-import { corEntrega, corExtras, corGanho, corPontos, corSaude, percentil, type Indicadores } from "@/lib/indicadores";
+import { corEntrega, corExtras, corGanho, corPontos, corSaude, percentil, segundaDaSemana, tlEmDestaque, type Indicadores } from "@/lib/indicadores";
 import { urlBanco } from "@/lib/db";
 import { numeroDe } from "@/lib/teamretro";
 import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
@@ -23,7 +23,10 @@ const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)}%`
 const num = (v: number | null) => (v == null ? "—" : String(Math.round(v * 10) / 10).replace(".", ","));
 const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Bahia", day: "2-digit", month: "2-digit" });
 // Número da sprint ("Sprint 110 - 13/10 - 26/10" → 110, "X-Reta | Sprint 132" → 132); semana Kanban pela data.
-const rotulo = (p: Indicadores) => (p.periodo.nome ? numeroDe(p.periodo.nome) ?? p.periodo.nome : dataBR(p.periodo.inicio));
+// Semana Kanban: a janela é sáb–sex, mas o rótulo mostra sempre a segunda-feira.
+const diaMes = (dia: string) => `${dia.slice(8, 10)}/${dia.slice(5, 7)}`;
+const rotulo = (p: Indicadores) => (p.periodo.tipo === "semana" ? diaMes(segundaDaSemana(p.periodo.inicio))
+  : p.periodo.nome ? numeroDe(p.periodo.nome) ?? p.periodo.nome : dataBR(p.periodo.inicio));
 
 const TIPOS: Record<string, string> = { entrega: "História", tecnologia: "Tecnologia", bug: "Correção", operacional: "Operacional", ajuste: "Ajuste", outro: "Outro" };
 
@@ -131,6 +134,9 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
     ...(ps.some((p) => p.esforcoSdd != null) ? [["Pontos de esforço COM SDD", (p: Indicadores) => num(p.esforcoSdd ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.ganhoSdd != null) ? [["Ganho SDD", (p: Indicadores) => <span className={`s-${corGanho(p.ganhoSdd)}`}>{pct(p.ganhoSdd ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Itens entregues", (p) => p.itensEntregues],
+    ...(ps.some((p) => p.pctItensTl != null || p.pctPtsTl != null) ? [["Tech lead (itens / pontos)", (p: Indicadores) =>
+      <span className={tlEmDestaque(p) ? "s-ruim" : undefined} title={tlEmDestaque(p) ? "Tech lead entregou 30% ou mais no período" : undefined}>
+        {pct(p.pctItensTl ?? null)} / {pct(p.pctPtsTl ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.capacidade) ? [["Capacidade (dias-dev)", (p: Indicadores) => num(p.capacidade ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Cycle time P50 (dias)", (p) => num(p.cycleP50)],
     ["Chamados resolvidos (N3)", (p) => (p.chamados == null ? "—" : `${p.chamados} (${p.chamadosN3})`)],
@@ -173,7 +179,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
   } else {
     slides.push(
       <Slide key="vazao" rodape={rodape} demo={d.demo}>
-        <Cabecalho t={t} eyebrow="VAZÃO" titulo="Itens entregues por semana" sub="Janela sábado a sexta" />
+        <Cabecalho t={t} eyebrow="VAZÃO" titulo="Itens entregues por semana" sub={`Semana identificada pela segunda-feira · janela sábado a sexta${
+          ps.some(tlEmDestaque) ? ` · tech lead com 30% ou mais: ${ps.filter(tlEmDestaque).map(rotulo).join(", ")}` : ""}`} />
         <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Itens entregues", valores: ps.map((p) => p.itensEntregues) }]} /></div>
         <Faixa slide="vazao" />
       </Slide>,
@@ -209,6 +216,16 @@ function slidesDoTime(d: DadosDeck, t: DadosTime) {
         <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Proporção dos pontos por tipo de planejamento" sub={`Composição da sprint com base em seu planejamento${notaMedida(ps, "porPlanejamento")}`} />
         <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porPlanejamento")} /></div>
         <Faixa slide="comp-plan" />
+      </Slide>,
+    );
+  }
+
+  if (!scrum && ps.some((p) => Object.keys(p.porPlanejamento).length)) {
+    slides.push(
+      <Slide key="comp-urgencia" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="COMPOSIÇÃO" titulo="Itens padrão e urgentes" sub={`Proporção por classe de serviço${notaMedida(ps, "porPlanejamento")}`} />
+        <div className="grafico"><Barras modo="empilhado100" rotulos={rot} series={series(ps, "porPlanejamento")} /></div>
+        <Faixa slide="comp-urgencia" />
       </Slide>,
     );
   }

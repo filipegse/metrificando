@@ -3,6 +3,7 @@ import { Icone } from "../componentes/Icone";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lerUsuario, salvarUsuario } from "./usuario";
 import { CATEGORIAS, colunaDe, ROTULO_GRUPO } from "@/lib/composicao";
+import { segundaDaSemana } from "@/lib/indicadores";
 
 type Linha = Record<string, string | number | null> & { time: string; frente: string; nome: string };
 type Registro = { id: number; quando: string; usuario: string; acao: string; frente: string; nome: string;
@@ -26,6 +27,8 @@ const COLUNAS: { campo: string; rotulo: string; tipo: "texto" | "data" | "numero
   { campo: "cycle_p85", rotulo: "Ciclo P85", tipo: "numero" },
   { campo: "produtividade", rotulo: "Produtiv. %", tipo: "fracao" },
   { campo: "motivacao", rotulo: "Motivação %", tipo: "fracao" },
+  { campo: "pct_itens_tl", rotulo: "TL itens %", tipo: "fracao" },
+  { campo: "pct_pts_tl", rotulo: "TL pontos %", tipo: "fracao" },
 ];
 // Composição (22 colunas): exibidas só quando o usuário pede.
 const COLUNAS_COMPOSICAO = CATEGORIAS.flatMap((c) => (["pts", "itens"] as const).map((m) => ({
@@ -134,18 +137,20 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
       <section className="card">
         <div className="tabela-rolagem">
           <table className="editavel">
-            <thead><tr><th>Frente</th>{colunas.map((c) => <th key={c.campo} title={"grupo" in c ? String(c.grupo) : undefined}>{c.rotulo}</th>)}<th /></tr></thead>
+            <thead><tr><th>Frente</th><th title="Semanas Kanban são identificadas pela segunda-feira (janela sábado a sexta)">Semana (seg.)</th>{colunas.map((c) => <th key={c.campo} title={"grupo" in c ? String(c.grupo) : undefined}>{c.rotulo}</th>)}<th /></tr></thead>
             <tbody>
               {visiveis.map((l) => {
                 const k = chaveDe(l), r = rascunho[k] ?? {}, sujo = Object.keys(r).length > 0;
                 return (
                   <tr key={k} className={sujo ? "sujo" : ""}>
                     <td className="frente">{l.frente || "—"}</td>
+                    <td className="frente">{l.tipo === "semana" && (l.inicio ?? l.fim) ? String(segundaDaSemana(String(l.inicio ?? l.fim))).split("-").reverse().join("/") : "—"}</td>
                     {colunas.map((c) => {
                       const valor = r[c.campo] ?? paraTela(c.campo, l[c.campo]);
                       const mudar = (v: string) => setRascunho((x) => ({ ...x, [k]: { ...x[k], [c.campo]: v } }));
                       return (
-                        <td key={c.campo} className={r[c.campo] !== undefined ? "alterada" : ""}>
+                        <td key={c.campo} className={[r[c.campo] !== undefined ? "alterada" : "", c.campo.endsWith("_tl") && Number(l[c.campo]) >= 0.3 ? "destaque-tl" : ""].join(" ").trim()}
+                          title={c.campo.endsWith("_tl") && Number(l[c.campo]) >= 0.3 ? "Tech lead entregou 30% ou mais no período" : undefined}>
                           {c.tipo === "tipo" ? (
                             <select value={valor} onChange={(e) => mudar(e.target.value)}><option value="sprint">sprint</option><option value="semana">semana</option></select>
                           ) : (

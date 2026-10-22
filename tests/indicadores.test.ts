@@ -85,3 +85,16 @@ describe("histórico das planilhas", async () => {
     expect(hist("DSR 69", "2026-09-30").chamados).toBeNull();
   });
 });
+
+import { segundaDaSemana, tlEmDestaque } from "../src/lib/indicadores";
+describe("semana Kanban e tech lead", () => {
+  it("mostra a segunda-feira da janela sábado–sexta", () => {
+    expect(segundaDaSemana("2026-06-27")).toBe("2026-06-29");
+    expect(segundaDaSemana("2026-06-29")).toBe("2026-06-29");
+    expect(segundaDaSemana("2026-12-26")).toBe("2026-12-28");
+  });
+  it("destaca tech lead a partir de 30%", () => {
+    expect(tlEmDestaque({ pctItensTl: 0.3, pctPtsTl: 0.1 })).toBe(true);
+    expect(tlEmDestaque({ pctItensTl: 0.2, pctPtsTl: 0.29 })).toBe(false);
+  });
+});

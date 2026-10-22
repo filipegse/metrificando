@@ -14,7 +14,7 @@ export const COR_CATEGORIA: Record<string, string> = {
   "Tecnologia": "#1433b0", "Evolução técnica": "#00dbff",
   "Correção": "#ff47ff", "Suporte/rotina": "#ff9eff",
   "Operacional": "#6e00ff", "Ajuste": "#594582",
-  "Planejado": "#00e175", "Extra": "#007875", "Bônus": "#61807a",
+  "Planejado": "#00e175", "Extra": "#007875", "Bônus": "#61807a", "Padrão": "#00e175", "Urgente": "#ff47ff",
   "Sem categoria": "#c9d3d0", "Sem classificação": "#c9d3d0", "Outro": "#c9d3d0",
 };
 

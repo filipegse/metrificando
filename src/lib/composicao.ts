@@ -11,6 +11,9 @@ export const CATEGORIAS: { grupo: Grupo; chave: string; rotulo: string; /** chav
   { grupo: "planejamento", chave: "planejado", rotulo: "Planejado", deck: "Planejado", termos: ["planejados", "planejado"] },
   { grupo: "planejamento", chave: "extra", rotulo: "Extra", deck: "Extra", termos: ["extras", "extra"] },
   { grupo: "planejamento", chave: "bonus", rotulo: "Bônus", deck: "Bônus", termos: ["bonus"] },
+  // Kanban não tem planejamento: classifica itens em padrão e urgente.
+  { grupo: "planejamento", chave: "padrao", rotulo: "Padrão", deck: "Padrão", termos: ["padrao", "padroes"] },
+  { grupo: "planejamento", chave: "urgente", rotulo: "Urgente", deck: "Urgente", termos: ["urgente", "urgentes"] },
   { grupo: "roadmap", chave: "grandes", rotulo: "Grandes entregas", deck: "Grandes entregas", termos: ["grandes entregas"] },
   { grupo: "roadmap", chave: "pequenas", rotulo: "Pequenas entregas", deck: "Pequenas entregas", termos: ["pequenas entregas"] },
   { grupo: "roadmap", chave: "evolucao", rotulo: "Evolução técnica", deck: "Evolução técnica", termos: ["evolucao tecnica"] },
@@ -35,6 +38,8 @@ export function apelidosDe(c: (typeof CATEGORIAS)[number], medida: "pts" | "iten
   for (const t of c.termos) for (const x of m) {
     r.push(`qtd ${x} concluidos ${t}`, `${x} concluidos ${t}`, `qtd ${x} ${t} concluidos`, `${x} ${t} concluidos`, `qtd ${x} concluidos de ${t}`);
   }
+  // Planilha Kanban (resumo semanal): "Pontos padrão", "Itens urgentes", "Pontos História"…
+  for (const t of c.termos) for (const x of m) r.push(`${x} ${t}`);
   // Roadmap: na planilha de métricas a categoria aparece só pelo nome ("Grandes entregas") e é contagem de itens.
   if (c.grupo === "roadmap") for (const t of c.termos) {
     r.push(medida === "pts" ? `pontos ${t}` : `qtd itens ${t}`);

@@ -33,6 +33,9 @@ export type Indicadores = {
   motivacao: number | null;
   /** Só no histórico das planilhas (a coleta do Jira não calcula). */
   esforcoSdd?: number | null;
+  /** Participação do tech lead no período (fração 0–1), da planilha Kanban. */
+  pctItensTl?: number | null;
+  pctPtsTl?: number | null;
   /** Dias-dev disponíveis no período (cadastro de pessoas, ausências e feriados). */
   capacidade?: number;
   ganhoSdd?: number | null;
@@ -146,7 +149,7 @@ export type LinhaHistoricoDeck = Record<string, unknown> & {
   nome: string; frente: string; tipo: string; inicio: string | null; fim: string;
   entrega: number | null; extras: number | null; pts_sdd: number | null; esforco_sdd: number | null; pts_sem_sdd: number | null;
   ganho_sdd: number | null; itens_entregues: number | null; cycle_p50: number | null; cycle_p85: number | null;
-  produtividade: number | null; motivacao: number | null;
+  produtividade: number | null; motivacao: number | null; pct_itens_tl?: number | null; pct_pts_tl?: number | null;
 };
 
 /** Composição do histórico: pontos por categoria; sem pontos no período, usa a quantidade de itens. */
@@ -174,5 +177,19 @@ export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
     chamados: null, chamadosN3: null, trabalhoN3: null, resolucaoP50: null,
     produtividade: h.produtividade, motivacao: h.motivacao,
     esforcoSdd: h.esforco_sdd, ganhoSdd: h.ganho_sdd, historico: true,
+    pctItensTl: h.pct_itens_tl ?? null, pctPtsTl: h.pct_pts_tl ?? null,
   };
+}
+
+/** Entrega do tech lead a partir de 30% dos pontos ou dos itens do período merece destaque. */
+export const LIMITE_TL = 0.3;
+export const tlEmDestaque = (i: Pick<Indicadores, "pctItensTl" | "pctPtsTl">) =>
+  (i.pctItensTl ?? 0) >= LIMITE_TL || (i.pctPtsTl ?? 0) >= LIMITE_TL;
+
+/** Segunda-feira da semana Kanban (a janela vai de sábado a sexta; a interface mostra a segunda). */
+export function segundaDaSemana(dia: string): string {
+  const d = new Date(`${dia.slice(0, 10)}T12:00:00Z`);
+  const dow = d.getUTCDay(); // sáb = 6 → +2; dom = 0 → +1; seg = 1 → 0
+  d.setUTCDate(d.getUTCDate() + (dow === 6 ? 2 : dow === 0 ? 1 : 1 - dow));
+  return d.toISOString().slice(0, 10);
 }

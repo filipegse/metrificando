@@ -127,3 +127,14 @@ describe("planilha Kanban (resumo semanal)", () => {
     expect(r.linhas[3]).toMatchObject({ inicio: "2026-12-26", fim: "2027-01-01" });
   });
 });
+
+describe("planilha Kanban: padrão/urgente e tech lead", () => {
+  it("reconhece as colunas", () => {
+    const m = sugerirMapa(["Semana", "Time", "Pontos padrão", "Itens urgentes", "% itens tech lead", "% pontos tech lead", "Itens História"]);
+    expect(m.plan_padrao_pts).toBe(2);
+    expect(m.plan_urgente_itens).toBe(3);
+    expect(m.pct_itens_tl).toBe(4);
+    expect(m.pct_pts_tl).toBe(5);
+    expect(m.tipo_historia_itens).toBe(6);
+  });
+});

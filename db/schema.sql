@@ -213,3 +213,9 @@ alter table historico_periodos
   add column if not exists rm_pequenas_pts numeric, add column if not exists rm_pequenas_itens numeric,
   add column if not exists rm_evolucao_pts numeric, add column if not exists rm_evolucao_itens numeric,
   add column if not exists rm_suporte_rotina_pts numeric, add column if not exists rm_suporte_rotina_itens numeric;
+
+-- Kanban: padrão × urgente e participação do tech lead (fração 0–1)
+alter table historico_periodos
+  add column if not exists plan_padrao_pts numeric, add column if not exists plan_padrao_itens numeric,
+  add column if not exists plan_urgente_pts numeric, add column if not exists plan_urgente_itens numeric,
+  add column if not exists pct_itens_tl numeric, add column if not exists pct_pts_tl numeric;
