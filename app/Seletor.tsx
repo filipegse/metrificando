@@ -124,6 +124,23 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
     return `/apresentacao?${q.toString()}`;
   }, [trimestre, selecionados, recortes, personalizar, selFrentes, agrup, slides]);
 
+  // Salva a configuração e abre /apresentacao/<id>: os parâmetros não aparecem na URL.
+  // Sem banco (demonstração), cai no formato antigo com os parâmetros na URL.
+  const [abrindo, setAbrindo] = useState(false);
+  const abrir = async (imprimir: boolean) => {
+    setAbrindo(true);
+    const janela = imprimir ? window.open("", "_blank") : null;
+    let url = destino;
+    try {
+      const r = await fetch("/api/decks", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ parametros: Object.fromEntries(new URL(destino, location.origin).searchParams) }) });
+      if (r.ok) url = `/apresentacao/${(await r.json()).id}`;
+    } catch { /* mantém o formato antigo */ }
+    const final = imprimir ? `${url}${url.includes("?") ? "&" : "?"}imprimir=1` : url;
+    if (janela) janela.location.href = final; else location.href = final;
+    setAbrindo(false);
+  };
+
   const podeAvancar = passo === 0 ? selecionados.length > 0 : passo === 2 ? slidesEscolhidos.length > 0 : true;
   const rotuloTrimestre = trimestre.replace(/^(\d{4})-Q(\d)$/, "Q$2 $1");
   const periodoDe = (c: Cartao) => {
@@ -274,8 +291,8 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
           </dl>
           <p className="dica">Abertura e encerramento entram sempre. Slides sem dados no período saem automaticamente.</p>
           <div className="acoes">
-            <a className="botao" href={destino}><Icone nome="apresentacao" /> Exibir apresentação</a>
-            <a className="botao secundario" href={`${destino}&imprimir=1`} target="_blank" rel="noreferrer">Imprimir / salvar PDF</a>
+            <button type="button" className="botao" disabled={abrindo} onClick={() => abrir(false)}><Icone nome="apresentacao" /> Exibir apresentação</button>
+            <button type="button" className="botao secundario" disabled={abrindo} onClick={() => abrir(true)}>Imprimir / salvar PDF</button>
           </div>
         </section>
       )}

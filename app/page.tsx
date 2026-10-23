@@ -2,6 +2,7 @@
 import { PERFIS } from "@/config/perfis";
 import { db, urlBanco } from "@/lib/db";
 import { Seletor } from "./Seletor";
+import { lerDeckSalvo } from "@/lib/decks";
 
 /** Trimestre atual e os anteriores, no formato AAAA-QN. */
 function ultimosTrimestres(n: number): string[] {
@@ -59,7 +60,9 @@ const fmt = (v: number | null, sufixo = "") => (v == null ? "—" : `${Math.roun
 const dataBR = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Bahia" });
 
 export default async function Pagina({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const inicial = await searchParams;
+  const busca = await searchParams;
+  // Voltando de um deck salvo: a seleção vem do banco, não da URL.
+  const inicial = (busca.deck && (await lerDeckSalvo(busca.deck))) || busca;
   const [resumos, sprints] = await Promise.all([carregar(), sprintsDisponiveis()]);
   return (
     <main>

@@ -223,3 +223,10 @@ alter table historico_periodos
 -- Kanban: hora extra no período
 alter table historico_periodos
   add column if not exists hora_extra_h numeric, add column if not exists itens_hora_extra numeric;
+
+-- Decks montados no assistente: a URL da apresentação leva só o id
+create table if not exists decks_salvos (
+  id          text primary key,
+  parametros  jsonb not null,
+  criado_em   timestamptz not null default now()
+);
