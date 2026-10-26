@@ -80,3 +80,25 @@ describe("frentes com sprints próprias (TRG)", async () => {
     expect(periodoDoHealthCheck("2026-10-27", [{ periodo_id: "x", tipo: "sprint", nome: "X-Reta | Sprint 132", inicio: "2026-10-13T03:00:00Z", fim: "2026-10-26T20:00:00Z" }], "X-Reta | 132")).toBe("x");
   });
 });
+
+import { periodoDoHealthCheck as pdh } from "../src/lib/teamretro";
+describe("health check em semana do histórico", () => {
+  it("sexta-feira à tarde ainda é da semana (datas sem hora)", () => {
+    const ps = [{ periodo_id: "h:a", tipo: "semana", nome: "27/06–03/07/2026", inicio: "2026-06-27", fim: "2026-07-03" }];
+    expect(pdh("2026-07-03", ps)).toBe("h:a");
+    expect(pdh("2026-07-04", ps)).toBeNull();
+  });
+});
+
+import { semanasDoHealthCheck } from "../src/lib/teamretro";
+describe("health check Kanban cobre várias semanas", () => {
+  const sem = (i: string, f: string) => ({ periodo_id: `h:${i}`, tipo: "semana", nome: i, inicio: i, fim: f });
+  const ps = [sem("2026-09-05", "2026-09-11"), sem("2026-09-26", "2026-10-02"), sem("2026-10-03", "2026-10-09"), sem("2026-10-10", "2026-10-16")];
+  it("da data do título até a sexta anterior", () => {
+    expect(semanasDoHealthCheck("2026-10-12", "11.Q3.26 28/09", ps)).toEqual(["h:2026-09-26", "h:2026-10-03"]);
+    expect(semanasDoHealthCheck("2026-09-14", "10.Q3.26 07/09", ps)).toEqual(["h:2026-09-05"]);
+  });
+  it("sem data no título: última semana fechada", () => {
+    expect(semanasDoHealthCheck("2026-10-12", "Health", ps)).toEqual(["h:2026-10-03"]);
+  });
+});

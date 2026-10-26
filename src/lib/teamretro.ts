@@ -72,7 +72,9 @@ export function periodoDoHealthCheck(data: string, periodos: PeriodoRef[], titul
     if (porNumero) return porNumero.periodo_id;
   }
   const t = new Date(`${data}T12:00:00-03:00`).getTime();
-  const semana = periodos.find((p) => p.tipo === "semana" && t >= new Date(p.inicio).getTime() && t <= new Date(p.fim).getTime());
+  // Datas sem hora (histórico das planilhas) valem o dia inteiro no horário da Bahia.
+  const ms = (d: string, fimDoDia = false) => (d.length <= 10 ? new Date(`${d}T00:00:00-03:00`).getTime() + (fimDoDia ? DIA - 1 : 0) : new Date(d).getTime());
+  const semana = periodos.find((p) => p.tipo === "semana" && t >= ms(p.inicio) && t <= ms(p.fim, true));
   if (semana) return semana.periodo_id;
   let melhor: { id: string; d: number } | null = null;
   for (const p of periodos.filter((p) => p.tipo === "sprint")) {
@@ -93,4 +95,25 @@ export async function listarHealthChecks(teamId: string, dateFrom: string, dateT
   const resp = await fetch(url, { headers: { "X-API-KEY": chave, Accept: "application/json" } });
   if (!resp.ok) throw new Error(`TeamRetro ${resp.status}: ${await resp.text()}`);
   return ((await resp.json()).data as HealthCheck[]).filter((h) => h.status === "closed");
+}
+
+/**
+ * Kanban: o health check avalia as semanas desde a data do título ("11.Q3.26 28/09") até a última sexta antes dele.
+ * Sem data no título, avalia só a semana fechada mais recente antes do health check.
+ * Devolve todas as semanas cobertas (cada uma recebe o mesmo resultado).
+ */
+export function semanasDoHealthCheck(data: string, titulo: string | undefined, periodos: PeriodoRef[]): string[] {
+  const dia = (d: string, fim = false) => new Date(`${d.slice(0, 10)}T00:00:00-03:00`).getTime() + (fim ? DIA - 1 : 0);
+  const hc = dia(data);
+  const semanas = periodos.filter((p) => p.tipo === "semana" && dia(p.fim, true) < hc);
+  const m = titulo?.match(/(\d{1,2})\/(\d{1,2})(?!\d)/);
+  if (m) {
+    let ano = Number(data.slice(0, 4));
+    let inicio = Date.UTC(ano, Number(m[2]) - 1, Number(m[1]));
+    if (inicio > hc) inicio = Date.UTC(--ano, Number(m[2]) - 1, Number(m[1]));
+    const de = dia(new Date(inicio).toISOString());
+    return semanas.filter((p) => dia(p.fim, true) >= de).map((p) => p.periodo_id);
+  }
+  const ultima = semanas.sort((a, b) => dia(b.fim) - dia(a.fim))[0];
+  return ultima ? [ultima.periodo_id] : [];
 }
