@@ -4,6 +4,7 @@ export type DefSlide = { chave: string; titulo: string; descricao: string; metod
 export const SLIDES: DefSlide[] = [
   { chave: "capa", titulo: "Capa do time", descricao: "Nome do time e da frente, metodologia e intervalo de períodos apresentado." },
   { chave: "matriz", titulo: "Tabela de indicadores", descricao: "Pontos com e sem SDD, itens, capacidade, tempo de ciclo, chamados, tech lead, hora extra e moral, lado a lado por período, com caixas de leitura." },
+  { chave: "calendario", titulo: "Calendário do período", descricao: "Dias úteis e não úteis, feriados e férias, folgas e licenças de quem estava no time em cada período (contexto de disponibilidade, não de desempenho)." },
   { chave: "entrega", titulo: "Proporção de entrega", descricao: "Pontos planejados concluídos ÷ pontos planejados, com a referência de 100%.", metodologia: "scrum" },
   { chave: "vazao", titulo: "Vazão", descricao: "Itens entregues por período, com destaque para as semanas em que o tech lead entregou 30% ou mais.", metodologia: "kanban" },
   { chave: "desempenho", titulo: "Desempenho por pontos", descricao: "Pontos concluídos COM SDD e SEM SDD por período." },

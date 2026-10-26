@@ -5,6 +5,7 @@ import { COLUNAS_METRICAS } from "./historico";
 const COLUNAS_HIST_DECK = `nome, frente, tipo, inicio::text as inicio, fim::text as fim, ${COLUNAS_METRICAS.map((c) => `${c}::float as ${c}`).join(", ")}`;
 import { carregarCalendario } from "./coleta";
 import { agrupar, AGRUPAMENTOS, type Agrupamento } from "./agrupamento";
+import { contextoDoPeriodo, type AusenciaCtx, type FeriadoCtx } from "./contexto";
 import { capacidade, type AlocacaoCap, type AusenciaCap } from "./capacidade";
 import { indicadores, indicadoresDoHistorico, type LinhaHistoricoDeck, type Indicadores, type LinhaDelivery, type LinhaSaude, type LinhaSuporte, type Periodo } from "./indicadores";
 
@@ -94,7 +95,9 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
   // Calendário e alocações valem para todos os times do deck.
   const cal = await carregarCalendario();
   const aloc = (await sql`select pessoa_id, time, frente, cargo, percentual::float, inicio::text, fim::text from alocacoes`) as AlocacaoCap[];
-  const aus = (await sql`select pessoa_id, inicio::text, fim::text from ausencias`) as AusenciaCap[];
+  const aus = (await sql`select a.pessoa_id, a.inicio::text, a.fim::text, a.tipo, p.nome from ausencias a join pessoas p on p.id = a.pessoa_id`) as (AusenciaCap & AusenciaCtx)[];
+  const fer = (await sql`select data::text, nome, abrangencia from feriados`) as FeriadoCtx[];
+  const ctx = (alvo: { time: string; frente?: string }, de: string, ate: string) => contextoDoPeriodo(alvo, de, ate, cal, fer, aloc, aus);
   for (const perfil of perfis) {
     // Sem recorte, o período entra no trimestre pela data de fim (sprint fechada / janela fechada).
     const r = recortes[perfil.projeto] ?? {};
@@ -131,12 +134,13 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
       const coletados = doBloco.map((p) => {
         const i = indicadores(p, delivery.filter(daFrente), suporte.filter(daFrente), saude, perfil.cicloDesde);
         const fim = p.fim.slice(0, 10), inicio = (p.inicio ?? p.fim).slice(0, 10);
-        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, inicio, fim) };
+        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, inicio, fim), contexto: ctx({ time: perfil.time, frente }, inicio, fim) };
       });
       // Histórico: linha da frente quando o bloco é de frente; linha do time inteiro quando o bloco é o time.
       const hist = linhasHist.filter((h) => (frente ? h.frente === frente : !h.frente)).map((h) => {
         const i = indicadoresDoHistorico(h);
-        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, (h.inicio ?? h.fim).slice(0, 10), h.fim.slice(0, 10)) };
+        const ini = (h.inicio ?? h.fim).slice(0, 10), fim = h.fim.slice(0, 10);
+        return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, ini, fim), contexto: ctx({ time: perfil.time, frente }, ini, fim) };
       });
       const todos = [...coletados, ...semDuplicar(coletados, hist)].sort((a, b) => Date.parse(a.periodo.fim) - Date.parse(b.periodo.fim));
       const g = r.agrupamento && r.agrupamento !== "periodo" ? r.agrupamento : undefined;
@@ -187,6 +191,12 @@ export function deckDemo(deck: string, projetos: string[], recortes: Record<stri
         produtividade: perfil.teamRetroId ? 0.76 + rnd() * 0.22 : null,
         motivacao: perfil.teamRetroId ? 0.78 + rnd() * 0.2 : null,
         capacidade: Math.round((frente ? 18 : 36) + rnd() * 8),
+        contexto: {
+          diasUteis: k === 1 ? (scrum ? 9 : 4) : scrum ? 10 : 5, diasNaoUteis: k === 1 ? (scrum ? 5 : 3) : scrum ? 4 : 2,
+          feriados: k === 1 ? [{ data: "2026-10-12", nome: "Nossa Senhora Aparecida", abrangencia: "nacional" }] : [],
+          ausencias: k % 4 === 2 ? [{ pessoa: "Pessoa fictícia", tipo: "Férias", de: "2026-10-19", ate: "2026-10-23", diasUteis: 5 }]
+            : k % 5 === 3 ? [{ pessoa: "Outra pessoa", tipo: "Folga", de: "2026-11-02", ate: "2026-11-02", diasUteis: 1 }] : [],
+        },
       };
     });
     // demo=misto: times Kanban ganham uma fase Scrum antes, para visualizar a transição.

@@ -53,6 +53,8 @@ export type Indicadores = {
   itensHoraExtra?: number | null;
   /** Dias-dev disponíveis no período (cadastro de pessoas, ausências e feriados). */
   capacidade?: number;
+  /** Feriados, dias não úteis e ausências do time no período. */
+  contexto?: import("./contexto").ContextoPeriodo;
   ganhoSdd?: number | null;
   historico?: boolean;
   /** Histórico: se a composição veio em pontos ou em quantidade de itens. */

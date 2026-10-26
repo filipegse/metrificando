@@ -241,3 +241,21 @@ table.editavel td.destaque-tl input { color: var(--perigo, #c74f24); font-weight
 .confirmacao ul { margin: 0; padding-left: 18px; }
 .confirmacao .acoes { display: flex; gap: var(--e-3); flex-wrap: wrap; margin-top: var(--e-4); }
 @media (max-width: 640px) { .confirmacao dl { grid-template-columns: 1fr; } }
+
+/* Análise em tabela */
+main.largo { max-width: none; }
+.filtros-analise label { display: flex; flex-direction: column; gap: 4px; }
+.filtros-analise select[multiple] { min-width: 220px; }
+.barra-tabela { display: flex; justify-content: space-between; align-items: center; gap: var(--e-3); margin-bottom: var(--e-3); flex-wrap: wrap; }
+table.analise { border-collapse: collapse; font-size: var(--t-sm); white-space: nowrap; }
+table.analise th, table.analise td { padding: 6px 10px; border-bottom: 1px solid var(--line-forte); text-align: right; }
+table.analise td:nth-child(-n+6), table.analise th:nth-child(-n+6) { text-align: left; }
+table.analise thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+table.analise thead tr:first-child th { background: #000; color: var(--verde); text-align: center; }
+table.analise thead tr:nth-child(2) th { top: 31px; }
+table.analise tbody tr:hover td { background: var(--suave); }
+table.analise td:first-child { position: sticky; left: 0; background: var(--card); font-weight: 700; }
+table.analise td.ctx { background: color-mix(in srgb, #ff9eff 22%, var(--card)); }
+table.analise td.tl { background: color-mix(in srgb, #c74f24 18%, var(--card)); font-weight: 700; }
+.legenda-ctx { color: #ff9eff; } .legenda-tl { color: #c74f24; }
+table.analise td:last-child, table.analise td:nth-last-child(2) { white-space: normal; min-width: 240px; text-align: left; }

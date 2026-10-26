@@ -17,6 +17,7 @@ const CAMINHOS: Record<string, string> = {
   bandeira: "M5 21V4h11l-1.5 4L16 12H5",
   ausencia: "M3 10h18M5 5h14v15H5zM9 14l6 4M15 14l-6 4",
   check: "M5 12l5 5L20 7",
+  analise: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   alerta: "M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z",
 };
 

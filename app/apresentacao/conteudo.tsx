@@ -10,6 +10,7 @@ import { Barras, COR_CATEGORIA, Linhas } from "./graficos";
 import { Deck } from "./Deck";
 import { Leitura } from "./Leitura";
 import { slidesDaUrl } from "@/lib/slides";
+import { dataCurta, detalheContexto, resumoContexto } from "@/lib/contexto";
 import "./deck.css";
 
 // Reserva até os arquivos da At Hauss Aero (fonte oficial, licenciada) estarem em public/fonts.
@@ -150,6 +151,10 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
     ...(ps.some((p) => p.cycleMedia != null) ? [["Cycle time médio (dias)", (p: Indicadores) => num(p.cycleMedia ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.horaExtraH != null) ? [["Hora extra (h · itens)", (p: Indicadores) =>
       (p.horaExtraH == null ? "—" : `${num(p.horaExtraH)} · ${p.itensHoraExtra ?? "—"}`)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
+    ...(ps.some((p) => p.contexto) ? [["Feriados e ausências", (p: Indicadores) => {
+      const r = resumoContexto(p.contexto);
+      return r === "—" ? "—" : <span className="s-contexto" title={detalheContexto(p.contexto).join("\n")}>{r}</span>;
+    }]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ["Chamados resolvidos (N3)", (p) => (p.chamados == null ? "—" : `${p.chamados} (${p.chamadosN3})`)],
     ...(t.perfil.teamRetroId ? [
       ["Produtividade", (p: Indicadores) => <span className={`s-${corSaude(p.produtividade)}`}>{pct(p.produtividade)}</span>],
@@ -181,6 +186,28 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
       </div>
     </Slide>,
   ];
+
+  // Feriados, dias não úteis e ausências: contexto para ler vazão, pontos e capacidade.
+  const comContexto = psMatriz.filter((p) => p.contexto);
+  if (comContexto.length) {
+    slides.push(
+      <Slide key="calendario" rodape={rodape} demo={d.demo}>
+        <Cabecalho t={t} eyebrow="CALENDÁRIO" titulo="Feriados, dias não úteis e ausências" sub={`Contexto de cada ${scrum ? "sprint" : g ? g[1] : "semana"} · disponibilidade do time, não desempenho individual`} />
+        <table className="matriz calendario">
+          <thead><tr><th>{scrum ? "Sprint" : "Período"}</th><th>Dias úteis</th><th>Não úteis</th><th>Feriados</th><th>Férias, folgas e licenças</th></tr></thead>
+          <tbody>
+            {comContexto.map((p) => (
+              <tr key={p.periodo.periodo_id}>
+                <td>{rotulo(p)}</td><td>{p.contexto!.diasUteis}</td><td>{p.contexto!.diasNaoUteis}</td>
+                <td>{p.contexto!.feriados.map((f) => `${dataCurta(f.data)} ${f.nome}`).join(" · ") || "—"}</td>
+                <td>{p.contexto!.ausencias.map((a) => `${a.pessoa} (${a.tipo.toLowerCase()} ${dataCurta(a.de)}${a.de !== a.ate ? `–${dataCurta(a.ate)}` : ""})`).join(" · ") || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Slide>,
+    );
+  }
 
   if (scrum) {
     slides.push(

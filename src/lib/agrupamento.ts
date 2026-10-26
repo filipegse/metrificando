@@ -1,6 +1,7 @@
 // Agrupamento dos períodos do deck: cada grupo mostra a MÉDIA dos períodos que o compõem
 // (média semanal no Kanban, média por sprint no Scrum).
 import type { Indicadores } from "./indicadores";
+import { juntarContextos } from "./contexto";
 
 export const AGRUPAMENTOS = ["periodo", "quinzena", "mes", "trimestre"] as const;
 export type Agrupamento = (typeof AGRUPAMENTOS)[number];
@@ -74,6 +75,7 @@ export function agrupar(ps: Indicadores[], modo?: Agrupamento, ancora = "2026-06
       esforcoSdd: med(soma(ps.map((p) => p.esforcoSdd))), ganhoSdd: ponderada(ps.map((p) => [p.ganhoSdd, p.ptsSdd])),
       pctItensTl: ponderada(ps.map((p) => [p.pctItensTl, p.itensEntregues])), pctPtsTl: ponderada(ps.map((p) => [p.pctPtsTl, p.ptsSdd])),
       horaExtraH: med(soma(ps.map((p) => p.horaExtraH))), itensHoraExtra: med(soma(ps.map((p) => p.itensHoraExtra))),
+      contexto: juntarContextos(ps.map((p) => p.contexto)),
       capacidade: med(soma(ps.map((p) => p.capacidade))) ?? undefined,
     };
   });
