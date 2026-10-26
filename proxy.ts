@@ -15,6 +15,8 @@ function seguir(req: NextRequest) {
 export function proxy(req: NextRequest) {
   const { APP_USUARIO, APP_SENHA } = process.env;
   if (!APP_USUARIO || !APP_SENHA) return seguir(req);
+  // Webhooks (automações do Jira) não mandam a senha do site: a própria função valida o X-Webhook-Token.
+  if (req.nextUrl.pathname.startsWith("/api/webhooks/")) return seguir(req);
   const [tipo, valor] = (req.headers.get("authorization") ?? "").split(" ");
   if (tipo === "Basic" && valor && atob(valor) === `${APP_USUARIO}:${APP_SENHA}`) return seguir(req);
   return new NextResponse("Autenticação necessária", { status: 401, headers: { "WWW-Authenticate": 'Basic realm="Metrificando"' } });
