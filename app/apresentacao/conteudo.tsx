@@ -96,6 +96,9 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
   const unidade = g ? `${g[0]} (média por ${base})` : scrum ? "Sprints" : "Semanas (sáb–sex)";
   const notaGrupo = g ? ` · média por ${base} de cada ${g[1]}` : "";
   const desdeDev = t.perfil.cicloDesde === "desenvolvimento";
+  // Períodos do histórico sem mediana: o P50 exibido é a média.
+  const comMedia = ps.filter((p) => p.cycleP50EhMedia).map(rotulo);
+  const avisoMedia = comMedia.length ? ` · ⚠ média, não mediana, em: ${comMedia.join(", ")}` : "";
   const rot = ps.map(rotulo);
   const L = (slide: string, placeholder?: string) => (
     <Leitura deck={d.deck} time={nomeDoTime(t)} slide={slide} inicial={d.leituras[chaveLeitura(nomeDoTime(t), slide)]} demo={d.demo} placeholder={placeholder} />
@@ -142,7 +145,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
       <span className={tlEmDestaque(p) ? "s-ruim" : undefined} title={tlEmDestaque(p) ? "Tech lead entregou 30% ou mais no período" : undefined}>
         {pct(p.pctItensTl ?? null)} / {pct(p.pctPtsTl ?? null)}</span>]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.capacidade) ? [["Capacidade (dias-dev)", (p: Indicadores) => num(p.capacidade ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
-    [`Cycle time P50 (dias)${scrum ? "" : desdeDev ? " · desde dev" : " · com A Fazer"}`, (p) => num(p.cycleP50)],
+    [`Cycle time P50 (dias)${scrum ? "" : desdeDev ? " · desde dev" : " · com A Fazer"}`, (p) => (p.cycleP50EhMedia ? <span title="Média (o histórico importado não tem mediana)">{num(p.cycleP50)}*</span> : num(p.cycleP50))],
     ...(ps.some((p) => p.cycleP50Alt != null) ? [[`Cycle time P50 ${desdeDev ? "com A Fazer" : "desde dev"}`, (p: Indicadores) => num(p.cycleP50Alt ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.cycleMedia != null) ? [["Cycle time médio (dias)", (p: Indicadores) => num(p.cycleMedia ?? null)]] as [string, (p: Indicadores) => React.ReactNode][] : []),
     ...(ps.some((p) => p.horaExtraH != null) ? [["Hora extra (h · itens)", (p: Indicadores) =>
@@ -169,6 +172,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
           ))}
         </tbody>
       </table>
+      {psMatriz.some((p) => p.cycleP50EhMedia) && <p className="nota-matriz">* Tempo de ciclo médio: o histórico importado não tem a mediana (P50) desses períodos.</p>}
       <div className="cards">
         {[["c1", "Entrega e pontuação"], ["c2", "Fluxo e suporte"], ["c3", "Moral do time"]].map(([k, titulo]) => (
           <div className="card" key={k}><h4>{titulo}</h4>{L(`matriz-${k}`)}</div>
@@ -204,7 +208,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
       <Faixa slide="desempenho" />
     </Slide>,
     <Slide key="cycle" rodape={rodape} demo={d.demo}>
-      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis ${desdeDev ? "a partir do desenvolvimento (sem A Fazer)" : "da entrada em A Fazer"} até Concluído · P50 e P85${g ? ` · ${g[1]} = média dos períodos ponderada por itens` : ""}`} />
+      <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis ${desdeDev ? "a partir do desenvolvimento (sem A Fazer)" : "da entrada em A Fazer"} até Concluído · P50 e P85${g ? ` · ${g[1]} = média dos períodos ponderada por itens` : ""}${avisoMedia}`} />
       <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
       <Faixa slide="cycle" />
     </Slide>,

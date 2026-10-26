@@ -66,7 +66,7 @@ export function agrupar(ps: Indicadores[], modo?: Agrupamento, ancora = "2026-06
       ptsSdd: med(ps.reduce((a, p) => a + p.ptsSdd, 0))!, ptsSemSdd: med(ps.reduce((a, p) => a + p.ptsSemSdd, 0))!,
       itensEntregues: med(ps.reduce((a, p) => a + p.itensEntregues, 0))!,
       cycleP50: ponderada(ps.map((p) => [p.cycleP50, p.itensEntregues])), cycleP85: ponderada(ps.map((p) => [p.cycleP85, p.itensEntregues])),
-      cycleMedia: ponderada(ps.map((p) => [p.cycleMedia, p.itensEntregues])), cycleP50Alt: ponderada(ps.map((p) => [p.cycleP50Alt, p.itensEntregues])),
+      cycleP50EhMedia: ps.some((p) => p.cycleP50EhMedia), cycleMedia: ponderada(ps.map((p) => [p.cycleMedia, p.itensEntregues])), cycleP50Alt: ponderada(ps.map((p) => [p.cycleP50Alt, p.itensEntregues])),
       porPlanejamento: medMapa(somaMapa(ps.map((p) => p.porPlanejamento))), porTipo: medMapa(somaMapa(ps.map((p) => p.porTipo))), porRoadmap: medMapa(somaMapa(ps.map((p) => p.porRoadmap))),
       chamados: med(soma(ps.map((p) => p.chamados))), chamadosN3: med(soma(ps.map((p) => p.chamadosN3))), trabalhoN3: med(soma(ps.map((p) => p.trabalhoN3))),
       resolucaoP50: ponderada(ps.map((p) => [p.resolucaoP50, p.chamados ?? 0])),

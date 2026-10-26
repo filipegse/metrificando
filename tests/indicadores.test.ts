@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { indicadoresDoHistorico } from "../src/lib/indicadores";
 import { saudeDoPeriodo, corEntrega, corExtras, corPontos, indicadores, type LinhaDelivery } from "../src/lib/indicadores";
 
 const periodo = { periodo_id: "1", nome: "DSR 70", tipo: "sprint", inicio: "2026-10-01", fim: "2026-10-14" };
@@ -162,5 +163,14 @@ describe("indicadores Kanban coletados do Jira", () => {
       porPlanejamento: { "Padrão": 2, Urgente: 4 }, pctItensTl: 0.5, horaExtraH: 2.5, itensHoraExtra: 1 });
     expect(k.pctPtsTl).toBeCloseTo(4 / 6);
     expect(indicadores(per, ds as never, [], [], "desenvolvimento")).toMatchObject({ cycleP50: 2, cycleP50Alt: 3, horaExtraH: 2 });
+  });
+});
+
+describe("histórico sem P50", () => {
+  it("usa a média e sinaliza", () => {
+    const h = { nome: "x", frente: "", tipo: "semana", inicio: "2026-07-04", fim: "2026-07-10", entrega: null, extras: null, pts_sdd: 1, esforco_sdd: null,
+      pts_sem_sdd: 1, ganho_sdd: null, itens_entregues: 1, cycle_p50: null, cycle_p85: 5, cycle_media: 3, produtividade: null, motivacao: null };
+    expect(indicadoresDoHistorico(h as never)).toMatchObject({ cycleP50: 3, cycleP50EhMedia: true, cycleMedia: 3 });
+    expect(indicadoresDoHistorico({ ...h, cycle_p50: 2 } as never)).toMatchObject({ cycleP50: 2, cycleP50EhMedia: false });
   });
 });

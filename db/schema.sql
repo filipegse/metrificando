@@ -240,3 +240,21 @@ alter table itens_delivery
   add column if not exists por_tech_lead boolean;
 -- Histórico: média do tempo de ciclo (o padrão dos relatórios é o P50)
 alter table historico_periodos add column if not exists cycle_media numeric;
+
+-- Migrações de dados que rodam uma vez só (marcadas aqui).
+create table if not exists migracoes (
+  nome          text primary key,
+  aplicada_em   timestamptz not null default now()
+);
+-- media-no-p50 (26/10/2026): a importação da planilha Kanban gravou a "Média útil (h)" (média aritmética) no P50.
+-- Move para cycle_media nas semanas importadas, com registro na auditoria (pode ser desfeito na tela de dados).
+insert into historico_auditoria (usuario, acao, time, frente, nome, antes, depois)
+  select 'migração: média gravada como P50', 'edicao', h.time, h.frente, h.nome, to_jsonb(h),
+    to_jsonb(h) || jsonb_build_object('cycle_p50', null, 'cycle_media', h.cycle_p50)
+  from historico_periodos h
+  where h.tipo = 'semana' and h.cycle_p50 is not null and h.cycle_media is null
+    and not exists (select 1 from migracoes where nome = 'media-no-p50');
+update historico_periodos set cycle_media = cycle_p50, cycle_p50 = null
+  where tipo = 'semana' and cycle_p50 is not null and cycle_media is null
+    and not exists (select 1 from migracoes where nome = 'media-no-p50');
+insert into migracoes (nome) values ('media-no-p50') on conflict do nothing;

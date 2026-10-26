@@ -26,6 +26,8 @@ export type Indicadores = {
   cycleP85: number | null;
   /** Média do tempo de ciclo (o padrão dos relatórios é o P50). */
   cycleMedia?: number | null;
+  /** O "P50" exibido é a média (histórico sem mediana). */
+  cycleP50EhMedia?: boolean;
   /** Contagem alternativa (a outra regra de início), para comparação. */
   cycleP50Alt?: number | null;
   porPlanejamento: Record<string, number>;
@@ -203,7 +205,9 @@ export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
   return {
     periodo: { periodo_id: `h:${h.nome}`, nome: h.nome, tipo: h.tipo, inicio: h.inicio ?? h.fim, fim: h.fim, frente: h.frente },
     entrega: h.entrega, extras: h.extras, ptsSdd: h.pts_sdd ?? 0, ptsSemSdd: h.pts_sem_sdd ?? 0,
-    itensEntregues: h.itens_entregues ?? 0, cycleP50: h.cycle_p50, cycleP85: h.cycle_p85, cycleMedia: h.cycle_media ?? null,
+    itensEntregues: h.itens_entregues ?? 0, cycleP85: h.cycle_p85, cycleMedia: h.cycle_media ?? null,
+    // Sem P50 no histórico (planilha só trazia a média): exibe a média, sinalizada no deck.
+    cycleP50: h.cycle_p50 ?? h.cycle_media ?? null, cycleP50EhMedia: h.cycle_p50 == null && h.cycle_media != null,
     porPlanejamento: plan.valores, porTipo: tipo.valores, porRoadmap: rm.valores,
     medidaComposicao: { porPlanejamento: plan.medida, porTipo: tipo.medida, porRoadmap: rm.medida },
     chamados: null, chamadosN3: null, trabalhoN3: null, resolucaoP50: null,
