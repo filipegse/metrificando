@@ -23,7 +23,7 @@ function colunas(ls: LinhaAnalise[]): Col[] {
     { grupo: "Período", rotulo: "Fim", v: (p) => dataCurta(p.periodo.fim.slice(0, 10)) },
     { grupo: "Período", rotulo: "Frente", v: (p) => p.frenteBloco || p.periodo.frente || "" },
     { grupo: "Período", rotulo: "Metodologia", v: (p) => (p.fase === "scrum" ? "Scrum" : "Kanban") },
-    { grupo: "Período", rotulo: "Fonte", v: (p) => (p.historico ? "Planilha" : "Jira") },
+    { grupo: "Período", rotulo: "Fonte", v: (p) => p.fontes ?? (p.historico ? "Planilha" : "Jira") },
     { grupo: "Entrega", rotulo: "Entrega %", v: (p) => pct(p.entrega) },
     { grupo: "Entrega", rotulo: "Extras %", v: (p) => pct(p.extras) },
     { grupo: "Entrega", rotulo: "Itens", v: (p) => num(p.itensEntregues) },

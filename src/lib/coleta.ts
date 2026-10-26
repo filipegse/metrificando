@@ -3,7 +3,7 @@ import { db } from "./db";
 import { buscar } from "./jira";
 import { jqlDeliveryJanela, jqlDeliverySprint, jqlSuporte } from "./jql";
 import { normalizarDelivery, normalizarSuporte, type ItemDelivery, type ItemSuporte } from "./normalizar";
-import { janelaSemanal } from "./periodo";
+import { janelaFechada } from "./periodo";
 import { norm } from "./tempoStatus";
 import type { Calendario } from "./calendario";
 
@@ -32,8 +32,9 @@ function periodoDoEvento(e: Evento, perfil: Perfil): Periodo {
     return { periodoId: e.sprint_id, tipo: "sprint", nome: e.sprint_nome ?? null, frente: frenteDaSprint(perfil, e.sprint_nome), inicio: new Date(e.inicio), fim: new Date(e.fim) };
   }
   if (perfil.metodologia !== "kanban") throw new Error(`${perfil.time} não está em Kanban`);
-  // Disparo de sexta 23h: a janela que contém a referência é a que acabou de fechar.
-  const j = janelaSemanal(e.referencia ? new Date(e.referencia) : new Date());
+  // Última janela já fechada no momento da referência (ou agora): sexta 23h = a que fecha agora; execução manual
+  // em outro dia = a semana anterior. Vale também se a automação mandar a data do disparo como referência.
+  const j = janelaFechada(e.referencia ? new Date(e.referencia) : new Date());
   return { periodoId: j.periodoId, tipo: "semana", nome: null, frente: "", inicio: j.inicio, fim: j.fim };
 }
 

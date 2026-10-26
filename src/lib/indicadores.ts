@@ -57,6 +57,8 @@ export type Indicadores = {
   contexto?: import("./contexto").ContextoPeriodo;
   ganhoSdd?: number | null;
   historico?: boolean;
+  /** Período agrupado: de onde vieram os dados ("Planilha", "Jira" ou "Planilha + Jira"). */
+  fontes?: string;
   /** Histórico: se a composição veio em pontos ou em quantidade de itens. */
   medidaComposicao?: Partial<Record<"porPlanejamento" | "porTipo" | "porRoadmap", "pontos" | "itens" | null>>;
 };

@@ -75,6 +75,9 @@ export function agrupar(ps: Indicadores[], modo?: Agrupamento, ancora = "2026-06
       esforcoSdd: med(soma(ps.map((p) => p.esforcoSdd))), ganhoSdd: ponderada(ps.map((p) => [p.ganhoSdd, p.ptsSdd])),
       pctItensTl: ponderada(ps.map((p) => [p.pctItensTl, p.itensEntregues])), pctPtsTl: ponderada(ps.map((p) => [p.pctPtsTl, p.ptsSdd])),
       horaExtraH: med(soma(ps.map((p) => p.horaExtraH))), itensHoraExtra: med(soma(ps.map((p) => p.itensHoraExtra))),
+      // Grupo com semanas da planilha e do Jira: a fonte é mista.
+      historico: ps.every((p) => p.historico) ? true : undefined,
+      fontes: [...new Set(ps.map((p) => (p.historico ? "Planilha" : "Jira")))].join(" + "),
       contexto: juntarContextos(ps.map((p) => p.contexto)),
       capacidade: med(soma(ps.map((p) => p.capacidade))) ?? undefined,
     };
