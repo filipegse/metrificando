@@ -47,6 +47,8 @@ export type Perfil = {
   time: string;
   projeto: string;
   metodologia: "scrum" | "kanban";
+  /** Início do tempo de ciclo nos relatórios: com "A Fazer" (padrão) ou a partir do desenvolvimento. */
+  cicloDesde?: "a_fazer" | "desenvolvimento";
   /** Sábado que abre a primeira quinzena (mesmo corte da planilha Kanban). */
   ancoraQuinzena?: string;
   periodo: "sprint" | "semana_sab_sex";

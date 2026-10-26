@@ -25,6 +25,7 @@ const COLUNAS: { campo: string; rotulo: string; tipo: "texto" | "data" | "numero
   { campo: "itens_entregues", rotulo: "Itens", tipo: "numero" },
   { campo: "cycle_p50", rotulo: "Ciclo P50", tipo: "numero" },
   { campo: "cycle_p85", rotulo: "Ciclo P85", tipo: "numero" },
+  { campo: "cycle_media", rotulo: "Ciclo médio", tipo: "numero" },
   { campo: "produtividade", rotulo: "Produtiv. %", tipo: "fracao" },
   { campo: "motivacao", rotulo: "Motivação %", tipo: "fracao" },
   { campo: "pct_itens_tl", rotulo: "TL itens %", tipo: "fracao" },

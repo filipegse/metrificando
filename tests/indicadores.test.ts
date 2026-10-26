@@ -148,3 +148,19 @@ describe("frentes do deck", () => {
     expect(blocosDe(perfil("TRG"), {})).toEqual(["Retaguarda", "X-Retaguarda"]);
   });
 });
+
+describe("indicadores Kanban coletados do Jira", () => {
+  const per = { periodo_id: "w", nome: null, tipo: "semana", inicio: "2026-10-10", fim: "2026-10-16" };
+  const it2 = (o: Record<string, unknown>) => ({ periodo_id: "w", tipo_canonico: "entrega", tipo_jira: "História", sp_sdd: 2, sp_sem_sdd: 3,
+    planejamento: null, categoria_roadmap: null, entregue: true, cycle_time_dias: 2, ciclo_dev_dias: 1,
+    ciclo_extra_horas: 0, ciclo_dev_extra_horas: 0, urgente: false, por_tech_lead: false, ...o });
+  const ds = [it2({}), it2({ urgente: true, por_tech_lead: true, sp_sdd: 4, cycle_time_dias: 4, ciclo_dev_dias: 3, ciclo_extra_horas: 2.5, ciclo_dev_extra_horas: 2 }),
+    it2({ tipo_jira: "Ajuste", tipo_canonico: "ajuste", cycle_time_dias: 50 })];
+  it("ajuste fora; padrão × urgente; tech lead; hora extra; duas contagens de ciclo", () => {
+    const k = indicadores(per, ds as never, []);
+    expect(k).toMatchObject({ itensEntregues: 2, ptsSdd: 6, cycleP50: 3, cycleMedia: 3, cycleP50Alt: 2,
+      porPlanejamento: { "Padrão": 2, Urgente: 4 }, pctItensTl: 0.5, horaExtraH: 2.5, itensHoraExtra: 1 });
+    expect(k.pctPtsTl).toBeCloseTo(4 / 6);
+    expect(indicadores(per, ds as never, [], [], "desenvolvimento")).toMatchObject({ cycleP50: 2, cycleP50Alt: 3, horaExtraH: 2 });
+  });
+});

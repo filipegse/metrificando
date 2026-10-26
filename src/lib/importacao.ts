@@ -8,7 +8,7 @@ export type CampoComposicao = `${"tipo" | "plan" | "rm"}_${string}_${"pts" | "it
 
 export type Campo = CampoComposicao
   | "time" | "nome" | "inicio" | "fim" | "entrega" | "extras" | "pts_sdd" | "esforco_sdd" | "pts_sem_sdd"
-  | "esforco_sem_sdd" | "ganho_sdd" | "itens_entregues" | "cycle_p50" | "cycle_p85" | "produtividade" | "motivacao" | "pct_itens_tl" | "pct_pts_tl" | "hora_extra_h" | "itens_hora_extra"
+  | "esforco_sem_sdd" | "ganho_sdd" | "itens_entregues" | "cycle_p50" | "cycle_p85" | "cycle_media" | "produtividade" | "motivacao" | "pct_itens_tl" | "pct_pts_tl" | "hora_extra_h" | "itens_hora_extra"
   | "prod_coletiva" | "prod_individual" | "mot_coletiva" | "mot_individual" | "itens_total";
 
 /** Campos auxiliares: não são gravados, só usados para calcular outros campos. */
@@ -33,7 +33,9 @@ export const CAMPOS: DefCampo[] = [
   { campo: "itens_entregues", rotulo: "Itens entregues", tipo: "numero", apelidos: ["itens concluidos sem suporte", "qtd itens concluidos", "itens concluidos", "qtd de itens concluidos", "vazao", "itens entregues"], exatos: ["itens"] },
   // Reserva quando "sem suporte" vem negativo (CF: suporte fora da sprint, a fórmula da planilha desconta mesmo assim).
   { campo: "itens_total", rotulo: "Itens concluídos (total, reserva)", tipo: "numero", apelidos: [], exatos: ["qtd itens concluidos"] },
-  { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50", "p50 util dias", "p50 util h"], exatos: ["tempo do ciclo", "tempo de ciclo", "media util h", "media util dias", "mediana util h", "mediana util dias"] },
+  { campo: "cycle_p50", rotulo: "Tempo de ciclo P50", tipo: "numero", apelidos: ["tempo do ciclo p50", "p50 tempo do ciclo", "cycle time p50", "tempo de ciclo p50", "p50 util dias", "p50 util h"], exatos: ["tempo do ciclo", "tempo de ciclo", "mediana util h", "mediana util dias"] },
+  // "Média útil (h)" da planilha Kanban é a média aritmética (soma ÷ n), não a mediana.
+  { campo: "cycle_media", rotulo: "Tempo de ciclo médio", tipo: "numero", apelidos: ["tempo de ciclo medio", "media do tempo de ciclo"], exatos: ["media util h", "media util dias"] },
   { campo: "cycle_p85", rotulo: "Tempo de ciclo P85", tipo: "numero", apelidos: ["tempo do ciclo p85", "p85 tempo do ciclo", "cycle time p85", "tempo de ciclo p85"], exatos: ["p85 util dias", "p85 util h"] },
   { campo: "pct_itens_tl", rotulo: "% itens do tech lead", tipo: "fracao", apelidos: ["% itens tech lead", "% itens do tech lead", "% itens tl"] },
   { campo: "pct_pts_tl", rotulo: "% pontos do tech lead", tipo: "fracao", apelidos: ["% pontos tech lead", "% pontos do tech lead", "% pontos tl"] },
@@ -57,7 +59,7 @@ for (const c of CATEGORIAS) for (const m of ["pts", "itens"] as const) {
 export { ROTULO_GRUPO };
 
 /** Sobe quando as regras de reconhecimento de colunas mudam (invalida mapeamentos salvos antes). */
-export const VERSAO_MAPA = 5;
+export const VERSAO_MAPA = 6;
 
 export const normalizar = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim();
@@ -247,14 +249,14 @@ export function montarLinhas(
   // Tempo de ciclo sempre gravado em dias úteis (como a coleta do Jira). Título com "(h)" ou "(dias)" decide
   // a unidade daquela coluna; sem indicação, vale a opção (ou a dedução pela mediana).
   const cab = dados[linhaTitulo - 1] ?? [];
-  const unidadeDoTitulo = (c: "cycle_p50" | "cycle_p85") => {
+  const unidadeDoTitulo = (c: "cycle_p50" | "cycle_p85" | "cycle_media") => {
     const t = mapa[c] === undefined ? "" : normalizar(cab[mapa[c]!] ?? "");
     return / h$/.test(t) ? "horas" : / dias$/.test(t) ? "dias" : null;
   };
-  const semTitulo = (["cycle_p50", "cycle_p85"] as const).filter((c) => !unidadeDoTitulo(c));
+  const semTitulo = (["cycle_p50", "cycle_p85", "cycle_media"] as const).filter((c) => !unidadeDoTitulo(c));
   const unidade = !opcoes.unidadeCiclo || opcoes.unidadeCiclo === "auto"
     ? unidadeCiclo(linhas.flatMap((l) => semTitulo.map((c) => l[c]))) : opcoes.unidadeCiclo;
-  for (const c of ["cycle_p50", "cycle_p85"] as const) {
+  for (const c of ["cycle_p50", "cycle_p85", "cycle_media"] as const) {
     if ((unidadeDoTitulo(c) ?? unidade) !== "horas") continue;
     for (const l of linhas) {
       if (l[c] != null) l[c] = Math.round((l[c]! / HORAS_POR_DIA_UTIL) * 100) / 100;

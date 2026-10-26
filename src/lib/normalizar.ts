@@ -2,6 +2,7 @@ import { CAMPOS, TIPO_CANONICO, TIPO_SUPORTE, TIPOS_EXCLUIDOS, type FonteSuporte
 import { etapa, ETAPAS_ENTREGUE, STATUS_N3 } from "../config/status";
 import { transicoes, type IssueJira } from "./jira";
 import { tempoUtil, type Calendario } from "./calendario";
+import { jornadaHoras, norm, tempoPorStatus } from "./tempoStatus";
 
 const CALENDARIO_VAZIO: Calendario = { expedientes: [], feriados: new Set() };
 
@@ -20,9 +21,18 @@ export type ItemDelivery = {
   etapaFinal: string;
   entregue: boolean;
   entregueEm: Date | null;
-  /** Dias úteis (horas úteis ÷ jornada). */
+  /** Dias úteis (horas úteis ÷ jornada). Ciclo com "A Fazer" (soma do tempo por status, regra da planilha). */
   cycleTimeDias: number | null;
   cycleTimeHoras: number | null;
+  cicloExtraHoras: number | null;
+  /** Ciclo a partir do desenvolvimento (sem "A Fazer"). */
+  cicloDevDias: number | null;
+  cicloDevHoras: number | null;
+  cicloDevExtraHoras: number | null;
+  prioridade: string | null;
+  urgente: boolean;
+  /** Só para marcar itens do tech lead na coleta; o nome não é gravado. */
+  responsavel: string | null;
 };
 
 export type ItemSuporte = {
@@ -83,7 +93,12 @@ export function normalizarDelivery(issue: IssueJira, perfil: Perfil, cal: Calend
   if (!ehDelivery(tipo, perfil)) return null;
   const status: string = issue.fields.status?.name ?? "";
   const etapaFinal = etapa(perfil.mapaDelivery, status);
-  const { entregueEm, dias, horas } = cycleTime(issue, perfil, cal);
+  const { entregueEm } = cycleTime(issue, perfil, cal);
+  const t = tempoPorStatus(issue.fields.created ? new Date(issue.fields.created) : null, transicoes(issue), cal);
+  const temTempo = entregueEm != null && Object.keys(t.porStatus).length > 0;
+  const jornada = entregueEm ? jornadaHoras(new Date(entregueEm.getTime() - 3 * 3600_000).toISOString().slice(0, 10), cal) : 9.8;
+  const dias2 = (h: number) => Math.round((h / jornada) * 10000) / 10000;
+  const prioridade = valorOpcao(issue.fields.priority);
   return {
     chave: issue.key,
     frente: frenteDe(issue, perfil),
@@ -98,8 +113,16 @@ export function normalizarDelivery(issue: IssueJira, perfil: Perfil, cal: Calend
     etapaFinal,
     entregue: ETAPAS_ENTREGUE.has(etapaFinal),
     entregueEm,
-    cycleTimeDias: dias,
-    cycleTimeHoras: horas,
+    cycleTimeDias: temTempo ? dias2(t.ciclo.util) : null,
+    cycleTimeHoras: temTempo ? t.ciclo.util : null,
+    cicloExtraHoras: temTempo ? t.ciclo.extra : null,
+    cicloDevDias: temTempo ? dias2(t.cicloDev.util) : null,
+    cicloDevHoras: temTempo ? t.cicloDev.util : null,
+    cicloDevExtraHoras: temTempo ? t.cicloDev.extra : null,
+    prioridade,
+    // Urgente = prioridade Máxima (mesma regra do resumo semanal da planilha).
+    urgente: norm(prioridade ?? "") === "maxima",
+    responsavel: issue.fields.assignee?.displayName ?? null,
   };
 }
 

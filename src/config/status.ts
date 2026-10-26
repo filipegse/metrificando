@@ -115,6 +115,12 @@ export const SUPORTE_SIS: MapaStatus = {
 
 export const STATUS_N3 = "Enviado para N3";
 
+const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+/** Status do Jira → etapa. Ignora maiúsculas e acentos ("Em Desenvolvimento" = "Em desenvolvimento"). */
 export function etapa(mapa: MapaStatus, status: string): string {
-  return mapa[status] ?? "desconhecido";
+  if (mapa[status]) return mapa[status];
+  const k = semAcento(status);
+  for (const [s, e] of Object.entries(mapa)) if (semAcento(s) === k) return e;
+  return "desconhecido";
 }

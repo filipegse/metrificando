@@ -4,6 +4,7 @@ import { buscar } from "./jira";
 import { jqlDeliveryJanela, jqlDeliverySprint, jqlSuporte } from "./jql";
 import { normalizarDelivery, normalizarSuporte, type ItemDelivery, type ItemSuporte } from "./normalizar";
 import { janelaSemanal } from "./periodo";
+import { norm } from "./tempoStatus";
 import type { Calendario } from "./calendario";
 
 /** Expedientes e feriados cadastrados na aplicação. */
@@ -19,7 +20,7 @@ export type Evento =
   | { evento: "janela_semanal"; projeto: string; referencia?: string };
 
 const CAMPOS_BUSCA = [
-  "summary", "issuetype", "status", "created", "components",
+  "summary", "issuetype", "status", "created", "components", "priority", "assignee",
   ...Object.values(CAMPOS),
 ];
 
@@ -63,18 +64,35 @@ export async function coletar(e: Evento): Promise<{ time: string; periodoId: str
 }
 
 /** Idempotente: o período é regravado por inteiro (chave time + periodo_id). */
+/**
+ * Itens feitos pelo tech lead: responsável no Jira = pessoa com cargo TL alocada no time na data da entrega
+ * (cadastro de Pessoas). Só a marcação é gravada, nunca o nome.
+ */
+async function itensDoTechLead(perfil: Perfil, delivery: ItemDelivery[]): Promise<Set<string>> {
+  const tls = (await db()`select p.nome, a.inicio::text as inicio, a.fim::text as fim from alocacoes a
+    join pessoas p on p.id = a.pessoa_id where a.time = ${perfil.time} and a.cargo = 'TL'`) as { nome: string; inicio: string; fim: string | null }[];
+  return new Set(delivery.filter((i) => {
+    if (!i.responsavel) return false;
+    const dia = (i.entregueEm ?? new Date()).toISOString().slice(0, 10);
+    return tls.some((t) => norm(t.nome) === norm(i.responsavel!) && t.inicio <= dia && (!t.fim || dia <= t.fim));
+  }).map((i) => i.chave));
+}
+
 async function gravar(perfil: Perfil, p: Periodo, delivery: ItemDelivery[], suporte: ItemSuporte[]) {
   const sql = db();
+  const techLeads = await itensDoTechLead(perfil, delivery);
   const comandos = [
     sql`delete from periodos where time = ${perfil.time} and periodo_id = ${p.periodoId}`,
     sql`insert into periodos (time, periodo_id, tipo, nome, frente, inicio, fim, metodologia)
         values (${perfil.time}, ${p.periodoId}, ${p.tipo}, ${p.nome}, ${p.frente}, ${p.inicio}, ${p.fim}, ${perfil.metodologia})`,
     ...delivery.map((i) => sql`
       insert into itens_delivery (time, periodo_id, chave, frente, tipo_jira, tipo_canonico, sp_sdd, sp_sem_sdd, sp_original,
-        planejamento, categoria_roadmap, status_jira, etapa_final, entregue, entregue_em, cycle_time_dias, cycle_time_horas)
+        planejamento, categoria_roadmap, status_jira, etapa_final, entregue, entregue_em, cycle_time_dias, cycle_time_horas,
+        ciclo_extra_horas, ciclo_dev_dias, ciclo_dev_horas, ciclo_dev_extra_horas, prioridade, urgente, por_tech_lead)
       values (${perfil.time}, ${p.periodoId}, ${i.chave}, ${i.frente}, ${i.tipoJira}, ${i.tipoCanonico}, ${i.spSdd}, ${i.spSemSdd},
         ${i.spOriginal}, ${i.planejamento}, ${i.categoriaRoadmap}, ${i.statusJira}, ${i.etapaFinal}, ${i.entregue},
-        ${i.entregueEm}, ${i.cycleTimeDias}, ${i.cycleTimeHoras})`),
+        ${i.entregueEm}, ${i.cycleTimeDias}, ${i.cycleTimeHoras}, ${i.cicloExtraHoras}, ${i.cicloDevDias}, ${i.cicloDevHoras},
+        ${i.cicloDevExtraHoras}, ${i.prioridade}, ${i.urgente}, ${techLeads.has(i.chave)})`),
     ...suporte.map((i) => sql`
       insert into itens_suporte (time, periodo_id, projeto, chave, frente, nivel, papel, status_jira, etapa_final,
         criado_em, resolvido_em, tempo_resolucao_dias, tempo_resolucao_horas, na_sprint)

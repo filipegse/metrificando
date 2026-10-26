@@ -230,3 +230,13 @@ create table if not exists decks_salvos (
   parametros  jsonb not null,
   criado_em   timestamptz not null default now()
 );
+
+-- Tempo por status (regra da planilha Kanban): ciclo com "A Fazer" (cycle_time_*), a partir do desenvolvimento
+-- (ciclo_dev_*), hora extra, prioridade (urgente = Máxima) e marcação de item feito pelo tech lead (sem nome).
+alter table itens_delivery
+  add column if not exists ciclo_extra_horas numeric, add column if not exists ciclo_dev_dias numeric,
+  add column if not exists ciclo_dev_horas numeric, add column if not exists ciclo_dev_extra_horas numeric,
+  add column if not exists prioridade text, add column if not exists urgente boolean,
+  add column if not exists por_tech_lead boolean;
+-- Histórico: média do tempo de ciclo (o padrão dos relatórios é o P50)
+alter table historico_periodos add column if not exists cycle_media numeric;

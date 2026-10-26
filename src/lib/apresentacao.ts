@@ -107,7 +107,8 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
           where time = ${perfil.time} and fim >= ${de} and fim < ${ate} order by fim`) as Periodo[];
     const ids = periodos.map((p) => p.periodo_id);
     const delivery = (await sql`
-      select periodo_id, frente, tipo_canonico, sp_sdd::float, sp_sem_sdd::float, planejamento, categoria_roadmap, entregue, cycle_time_dias::float
+      select periodo_id, frente, tipo_canonico, tipo_jira, sp_sdd::float, sp_sem_sdd::float, planejamento, categoria_roadmap, entregue,
+        cycle_time_dias::float, ciclo_dev_dias::float, ciclo_extra_horas::float, ciclo_dev_extra_horas::float, urgente, por_tech_lead
       from itens_delivery where time = ${perfil.time} and periodo_id = any(${ids})`) as (LinhaDelivery & { frente: string | null })[];
     const suporte = (await sql`
       select periodo_id, frente, nivel, papel, tempo_resolucao_dias::float
@@ -128,7 +129,7 @@ export async function carregarDeck(deck: string, projetos: string[], recortes: R
       const daFrente = (x: { frente?: string | null }) => !frente || sprintsProprias || (x.frente ?? "").split(", ").includes(frente);
       const doBloco = periodos.filter((p) => !sprintsProprias || !frente || p.frente === frente);
       const coletados = doBloco.map((p) => {
-        const i = indicadores(p, delivery.filter(daFrente), suporte.filter(daFrente), saude);
+        const i = indicadores(p, delivery.filter(daFrente), suporte.filter(daFrente), saude, perfil.cicloDesde);
         const fim = p.fim.slice(0, 10), inicio = (p.inicio ?? p.fim).slice(0, 10);
         return { ...i, capacidade: capacidade(aloc, aus, cal, { time: perfil.time, frente }, inicio, fim) };
       });

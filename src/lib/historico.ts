@@ -4,7 +4,7 @@ import { COLUNAS_COMPOSICAO } from "./composicao";
 
 /** Colunas numéricas de historico_periodos (indicadores + composição). */
 export const COLUNAS_METRICAS = ["entrega", "extras", "pts_sdd", "esforco_sdd", "pts_sem_sdd", "esforco_sem_sdd", "ganho_sdd",
-  "itens_entregues", "cycle_p50", "cycle_p85", "produtividade", "motivacao", "pct_itens_tl", "pct_pts_tl", "hora_extra_h", "itens_hora_extra", ...COLUNAS_COMPOSICAO];
+  "itens_entregues", "cycle_p50", "cycle_p85", "cycle_media", "produtividade", "motivacao", "pct_itens_tl", "pct_pts_tl", "hora_extra_h", "itens_hora_extra", ...COLUNAS_COMPOSICAO];
 
 export const CAMPOS_EDITAVEIS = ["nome", "tipo", "inicio", "fim", ...COLUNAS_METRICAS] as const;
 export type CampoEditavel = (typeof CAMPOS_EDITAVEIS)[number];

@@ -139,12 +139,13 @@ describe("planilha Kanban: padrão/urgente e tech lead", () => {
   });
 });
 
-describe("planilha Kanban: média como P50 e hora extra", () => {
+describe("planilha Kanban: média, P50 e hora extra", () => {
   it("converte só a coluna em horas e importa hora extra", () => {
-    const cab = ["Semana", "Time", "Média útil (h)", "P85 útil (dias)", "Hora extra (h)", "Itens com hora extra"];
+    const cab = ["Semana", "Time", "Média útil (h)", "P50 útil (h)", "P85 útil (dias)", "Hora extra (h)", "Itens com hora extra"];
     const mapa = sugerirMapa(cab);
-    expect(mapa.cycle_p50).toBe(2);
-    const r = montarLinhas([cab, ["27/06–03/07/2026", "IC (Rematrix)", "19,6", "8", "4,2", "3"]], 1, mapa, { tipo: "semana", duracaoDias: 7, unidadeCiclo: "auto" });
-    expect(r.linhas[0]).toMatchObject({ cycle_p50: 2, cycle_p85: 8, hora_extra_h: 4.2, itens_hora_extra: 3 });
+    expect(mapa.cycle_media).toBe(2);
+    expect(mapa.cycle_p50).toBe(3);
+    const r = montarLinhas([cab, ["27/06–03/07/2026", "IC (Rematrix)", "19,6", "9,8", "8", "4,2", "3"]], 1, mapa, { tipo: "semana", duracaoDias: 7, unidadeCiclo: "auto" });
+    expect(r.linhas[0]).toMatchObject({ cycle_media: 2, cycle_p50: 1, cycle_p85: 8, hora_extra_h: 4.2, itens_hora_extra: 3 });
   });
 });

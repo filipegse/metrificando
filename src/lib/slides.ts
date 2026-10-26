@@ -7,7 +7,7 @@ export const SLIDES: DefSlide[] = [
   { chave: "entrega", titulo: "Proporção de entrega", descricao: "Pontos planejados concluídos ÷ pontos planejados, com a referência de 100%.", metodologia: "scrum" },
   { chave: "vazao", titulo: "Vazão", descricao: "Itens entregues por período, com destaque para as semanas em que o tech lead entregou 30% ou mais.", metodologia: "kanban" },
   { chave: "desempenho", titulo: "Desempenho por pontos", descricao: "Pontos concluídos COM SDD e SEM SDD por período." },
-  { chave: "cycle", titulo: "Tempo de ciclo", descricao: "P50 e P85 em dias úteis, do início do trabalho até Concluído.", observacao: "Sai do deck quando não há tempo de ciclo no período." },
+  { chave: "cycle", titulo: "Tempo de ciclo", descricao: "P50 e P85 em dias úteis até Concluído, contados com A Fazer ou a partir do desenvolvimento, conforme o time. A tabela de indicadores traz também a média e a outra contagem.", observacao: "Sai do deck quando não há tempo de ciclo no período." },
   { chave: "saude", titulo: "Moral do time", descricao: "Produtividade e motivação do health check do TeamRetro (Squad Feeling v2)." },
   { chave: "comp-plan", titulo: "Composição por planejamento", descricao: "Proporção dos pontos planejados, extras e bônus.", metodologia: "scrum", observacao: "Sai do deck quando não há composição." },
   { chave: "comp-urgencia", titulo: "Padrão × urgente", descricao: "Proporção de itens padrão e urgentes por período.", metodologia: "kanban", observacao: "Sai do deck quando não há composição." },

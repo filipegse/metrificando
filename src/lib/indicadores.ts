@@ -4,7 +4,11 @@
 export type LinhaDelivery = {
   periodo_id: string; tipo_canonico: string; sp_sdd: number | null; sp_sem_sdd: number | null;
   planejamento: string | null; categoria_roadmap: string | null; entregue: boolean; cycle_time_dias: number | null;
+  tipo_jira?: string; ciclo_dev_dias?: number | null; ciclo_extra_horas?: number | null; ciclo_dev_extra_horas?: number | null;
+  urgente?: boolean | null; por_tech_lead?: boolean | null;
 };
+/** De onde o tempo de ciclo do relatório começa: com "A Fazer" ou só depois que o dev puxa o ticket. */
+export type CicloDesde = "a_fazer" | "desenvolvimento";
 export type LinhaSuporte = { periodo_id: string; nivel: string | null; papel: string; tempo_resolucao_dias: number };
 export type LinhaSaude = { periodo_id: string; frente?: string; produtividade: number | null; motivacao: number | null; respostas: number };
 export type Periodo = { periodo_id: string; nome: string | null; tipo: string; inicio: string; fim: string; frente?: string; /** rótulo pronto de um período agrupado */ rotulo?: string };
@@ -20,6 +24,10 @@ export type Indicadores = {
   itensEntregues: number;
   cycleP50: number | null;
   cycleP85: number | null;
+  /** Média do tempo de ciclo (o padrão dos relatórios é o P50). */
+  cycleMedia?: number | null;
+  /** Contagem alternativa (a outra regra de início), para comparação. */
+  cycleP50Alt?: number | null;
   porPlanejamento: Record<string, number>;
   porTipo: Record<string, number>;
   porRoadmap: Record<string, number>;
@@ -67,7 +75,7 @@ export function grupoPlanejamento(valor: string | null): "Planejado" | "Extra" |
   return "Sem classificação";
 }
 
-const soma = (xs: (number | null)[]) => xs.reduce<number>((s, x) => s + (x ?? 0), 0);
+const soma = (xs: (number | null | undefined)[]) => xs.reduce<number>((s, x) => s + (x ?? 0), 0);
 
 function agrupar(itens: LinhaDelivery[], chave: (i: LinhaDelivery) => string): Record<string, number> {
   const r: Record<string, number> = {};
@@ -75,9 +83,12 @@ function agrupar(itens: LinhaDelivery[], chave: (i: LinhaDelivery) => string): R
   return r;
 }
 
-export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte: LinhaSuporte[], saude: LinhaSaude[] = []): Indicadores {
+export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte: LinhaSuporte[], saude: LinhaSaude[] = [],
+  cicloDesde: CicloDesde = "a_fazer"): Indicadores {
   const h = saudeDoPeriodo(saude.filter((x) => x.periodo_id === periodo.periodo_id));
-  const d = delivery.filter((i) => i.periodo_id === periodo.periodo_id);
+  const kanban = periodo.tipo === "semana";
+  // Kanban (como a planilha): itens do tipo Ajuste não entram na vazão, nos pontos nem no tempo de ciclo.
+  const d = delivery.filter((i) => i.periodo_id === periodo.periodo_id && !(kanban && (i.tipo_jira === "Ajuste" || i.tipo_canonico === "ajuste")));
   const s = suporte.filter((i) => i.periodo_id === periodo.periodo_id);
   const entregues = d.filter((i) => i.entregue);
   const planejados = d.filter((i) => grupoPlanejamento(i.planejamento) === "Planejado");
@@ -85,7 +96,14 @@ export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte
   const ptsSdd = soma(entregues.map((i) => i.sp_sdd));
   const ptsNaoPlanejados = soma(entregues.filter((i) => ["Extra", "Bônus"].includes(grupoPlanejamento(i.planejamento))).map((i) => i.sp_sdd));
   const sprint = periodo.tipo === "sprint";
-  const cycles = entregues.map((i) => i.cycle_time_dias).filter((x): x is number => x != null);
+  const valores = (f: (i: LinhaDelivery) => number | null | undefined) => entregues.map(f).filter((x): x is number => x != null);
+  const comFila = valores((i) => i.cycle_time_dias), semFila = valores((i) => i.ciclo_dev_dias);
+  const [cycles, alt] = cicloDesde === "desenvolvimento" ? [semFila, comFila] : [comFila, semFila];
+  const extra = entregues.map((i) => (cicloDesde === "desenvolvimento" ? i.ciclo_dev_extra_horas : i.ciclo_extra_horas));
+  const temExtra = extra.some((x) => x != null);
+  const temTl = entregues.some((i) => i.por_tech_lead != null);
+  const tl = entregues.filter((i) => i.por_tech_lead);
+  const temUrgencia = entregues.some((i) => i.urgente != null);
   const chamados = s.filter((i) => i.papel === "chamado");
   return {
     periodo,
@@ -96,7 +114,11 @@ export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte
     itensEntregues: entregues.length,
     cycleP50: percentil(cycles, 0.5),
     cycleP85: percentil(cycles, 0.85),
-    porPlanejamento: agrupar(entregues, (i) => grupoPlanejamento(i.planejamento)),
+    cycleMedia: cycles.length ? soma(cycles) / cycles.length : null,
+    cycleP50Alt: percentil(alt, 0.5),
+    // Kanban não tem planejamento: classe de serviço pela prioridade (urgente = Máxima).
+    porPlanejamento: kanban && temUrgencia ? agrupar(entregues, (i) => (i.urgente ? "Urgente" : "Padrão"))
+      : agrupar(entregues, (i) => grupoPlanejamento(i.planejamento)),
     porTipo: agrupar(entregues, (i) => i.tipo_canonico),
     porRoadmap: agrupar(entregues, (i) => i.categoria_roadmap ?? "Sem categoria"),
     chamados: chamados.length,
@@ -105,6 +127,10 @@ export function indicadores(periodo: Periodo, delivery: LinhaDelivery[], suporte
     resolucaoP50: percentil(chamados.map((i) => i.tempo_resolucao_dias), 0.5),
     produtividade: h?.produtividade ?? null,
     motivacao: h?.motivacao ?? null,
+    horaExtraH: temExtra ? soma(extra) : null,
+    itensHoraExtra: temExtra ? extra.filter((x) => (x ?? 0) > 0).length : null,
+    pctItensTl: temTl && entregues.length ? tl.length / entregues.length : null,
+    pctPtsTl: temTl && ptsSdd ? soma(tl.map((i) => i.sp_sdd)) / ptsSdd : null,
   };
 }
 
@@ -155,7 +181,7 @@ export type LinhaHistoricoDeck = Record<string, unknown> & {
   entrega: number | null; extras: number | null; pts_sdd: number | null; esforco_sdd: number | null; pts_sem_sdd: number | null;
   ganho_sdd: number | null; itens_entregues: number | null; cycle_p50: number | null; cycle_p85: number | null;
   produtividade: number | null; motivacao: number | null; pct_itens_tl?: number | null; pct_pts_tl?: number | null;
-  hora_extra_h?: number | null; itens_hora_extra?: number | null;
+  hora_extra_h?: number | null; itens_hora_extra?: number | null; cycle_media?: number | null;
 };
 
 /** Composição do histórico: pontos por categoria; sem pontos no período, usa a quantidade de itens. */
@@ -177,7 +203,7 @@ export function indicadoresDoHistorico(h: LinhaHistoricoDeck): Indicadores {
   return {
     periodo: { periodo_id: `h:${h.nome}`, nome: h.nome, tipo: h.tipo, inicio: h.inicio ?? h.fim, fim: h.fim, frente: h.frente },
     entrega: h.entrega, extras: h.extras, ptsSdd: h.pts_sdd ?? 0, ptsSemSdd: h.pts_sem_sdd ?? 0,
-    itensEntregues: h.itens_entregues ?? 0, cycleP50: h.cycle_p50, cycleP85: h.cycle_p85,
+    itensEntregues: h.itens_entregues ?? 0, cycleP50: h.cycle_p50, cycleP85: h.cycle_p85, cycleMedia: h.cycle_media ?? null,
     porPlanejamento: plan.valores, porTipo: tipo.valores, porRoadmap: rm.valores,
     medidaComposicao: { porPlanejamento: plan.medida, porTipo: tipo.medida, porRoadmap: rm.medida },
     chamados: null, chamadosN3: null, trabalhoN3: null, resolucaoP50: null,

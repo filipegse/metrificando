@@ -93,3 +93,5 @@ table.matriz { width: 100%; table-layout: fixed; border-collapse: collapse; font
 .matriz-area { position: absolute; left: 60px; right: 60px; top: 160px; bottom: 46px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
 .matriz-area.densa table.matriz { font-size: 13px; }
 .matriz-area.densa .matriz td, .matriz-area.densa .matriz th { padding-top: 4px; padding-bottom: 4px; }
+.matriz-area.muito-densa table.matriz { font-size: 12px; }
+.matriz-area.muito-densa .matriz td, .matriz-area.muito-densa .matriz th { padding-top: 2px; padding-bottom: 2px; }
