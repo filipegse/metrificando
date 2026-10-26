@@ -91,14 +91,12 @@ describe("health check em semana do histórico", () => {
 });
 
 import { semanasDoHealthCheck } from "../src/lib/teamretro";
-describe("health check Kanban cobre várias semanas", () => {
+describe("health check Kanban: último check até o fim da semana", () => {
   const sem = (i: string, f: string) => ({ periodo_id: `h:${i}`, tipo: "semana", nome: i, inicio: i, fim: f });
-  const ps = [sem("2026-09-05", "2026-09-11"), sem("2026-09-26", "2026-10-02"), sem("2026-10-03", "2026-10-09"), sem("2026-10-10", "2026-10-16")];
-  it("da data do título até a sexta anterior", () => {
-    expect(semanasDoHealthCheck("2026-10-12", "11.Q3.26 28/09", ps)).toEqual(["h:2026-09-26", "h:2026-10-03"]);
-    expect(semanasDoHealthCheck("2026-09-14", "10.Q3.26 07/09", ps)).toEqual(["h:2026-09-05"]);
-  });
-  it("sem data no título: última semana fechada", () => {
-    expect(semanasDoHealthCheck("2026-10-12", "Health", ps)).toEqual(["h:2026-10-03"]);
+  const ps = [sem("2026-09-05", "2026-09-11"), sem("2026-09-12", "2026-09-18"), sem("2026-09-19", "2026-09-25"),
+    sem("2026-10-03", "2026-10-09"), sem("2026-10-10", "2026-10-16"), sem("2026-10-17", "2026-10-23")];
+  it("vale da semana do check até a anterior ao próximo", () => {
+    expect(semanasDoHealthCheck("2026-09-14", "2026-10-12", ps)).toEqual(["h:2026-09-12", "h:2026-09-19", "h:2026-10-03"]);
+    expect(semanasDoHealthCheck("2026-10-12", null, ps)).toEqual(["h:2026-10-10", "h:2026-10-17"]);
   });
 });

@@ -98,22 +98,11 @@ export async function listarHealthChecks(teamId: string, dateFrom: string, dateT
 }
 
 /**
- * Kanban: o health check avalia as semanas desde a data do título ("11.Q3.26 28/09") até a última sexta antes dele.
- * Sem data no título, avalia só a semana fechada mais recente antes do health check.
- * Devolve todas as semanas cobertas (cada uma recebe o mesmo resultado).
+ * Kanban: a coleta é semanal e o health check é quinzenal. Cada semana recebe o último health check feito até o
+ * fim dela: o check vale da semana em que foi feito até a semana anterior ao próximo check (`proximo`).
  */
-export function semanasDoHealthCheck(data: string, titulo: string | undefined, periodos: PeriodoRef[]): string[] {
+export function semanasDoHealthCheck(data: string, proximo: string | null, periodos: PeriodoRef[]): string[] {
   const dia = (d: string, fim = false) => new Date(`${d.slice(0, 10)}T00:00:00-03:00`).getTime() + (fim ? DIA - 1 : 0);
-  const hc = dia(data);
-  const semanas = periodos.filter((p) => p.tipo === "semana" && dia(p.fim, true) < hc);
-  const m = titulo?.match(/(\d{1,2})\/(\d{1,2})(?!\d)/);
-  if (m) {
-    let ano = Number(data.slice(0, 4));
-    let inicio = Date.UTC(ano, Number(m[2]) - 1, Number(m[1]));
-    if (inicio > hc) inicio = Date.UTC(--ano, Number(m[2]) - 1, Number(m[1]));
-    const de = dia(new Date(inicio).toISOString());
-    return semanas.filter((p) => dia(p.fim, true) >= de).map((p) => p.periodo_id);
-  }
-  const ultima = semanas.sort((a, b) => dia(b.fim) - dia(a.fim))[0];
-  return ultima ? [ultima.periodo_id] : [];
+  const de = dia(data), ate = proximo ? dia(proximo) : Infinity;
+  return periodos.filter((p) => p.tipo === "semana" && dia(p.fim, true) >= de && dia(p.fim, true) < ate).map((p) => p.periodo_id);
 }
