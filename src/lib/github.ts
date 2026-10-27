@@ -161,7 +161,7 @@ export async function listarPRs(repo: string, desde: string): Promise<PR[]> {
 }
 
 /** Coleta os PRs atualizados nos últimos `dias` em todos os repos ativos, atribui e grava (idempotente). */
-export async function coletarGithub(dias: number): Promise<{ repos: number; prs: number; naoAtribuidos: number }> {
+export async function coletarGithub(dias: number): Promise<{ repos: number; prs: number; naoAtribuidos: number; nomes: string[] }> {
   const { db } = await import("./db");
   const sql = db();
   const desde = new Date(Date.now() - dias * 86_400_000).toISOString();
@@ -188,7 +188,7 @@ export async function coletarGithub(dias: number): Promise<{ repos: number; prs:
           frente = excluded.frente, origem = excluded.origem, deploy = excluded.deploy, hotfix = excluded.hotfix, coletado_em = now()`;
     }
   }
-  return { repos: repos.length, prs: total, naoAtribuidos };
+  return { repos: repos.length, prs: total, naoAtribuidos, nomes: repos };
 }
 
 /** Reatribui os PRs já gravados (depois de cadastrar logins ou mudar alocações), sem chamar o GitHub. */

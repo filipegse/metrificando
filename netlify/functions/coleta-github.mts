@@ -1,4 +1,4 @@
-// Disparo diário da coleta do GitHub. Na primeira vez (tabela vazia) carrega 120 dias; depois, os PRs
+// Disparo diário da coleta do GitHub. Com menos de 3 repos no banco carrega 120 dias; depois, os PRs
 // atualizados na última semana (cobre falhas de dias anteriores). A coleta roda na background function.
 import type { Config } from "@netlify/functions";
 import { db } from "../../src/lib/db";
@@ -8,8 +8,9 @@ export default async () => {
     console.log("GITHUB_TOKEN ausente: coleta do GitHub pulada.");
     return;
   }
-  const [{ n }] = (await db()`select count(*)::int as n from itens_pr`) as { n: number }[];
-  const dias = n ? 8 : 120;
+  // Carga completa enquanto a base tem poucos repos (primeira vez, ou token que só via parte da org).
+  const [{ n, repos }] = (await db()`select count(*)::int as n, count(distinct repo)::int as repos from itens_pr`) as { n: number; repos: number }[];
+  const dias = repos >= 3 ? 8 : 120;
   const r = await fetch(`${process.env.URL}/.netlify/functions/coleta-github-background`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-webhook-token": process.env.WEBHOOK_TOKEN ?? "" },
