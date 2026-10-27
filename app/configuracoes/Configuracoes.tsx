@@ -6,7 +6,7 @@ import { Gantt } from "./Gantt";
 type Expediente = { valido_de: string; inicio: string; fim: string };
 type Feriado = { data: string; nome: string; abrangencia: string };
 type Alocacao = { id: number; time: string; frente: string; cargo: string; percentual: number; inicio: string; fim: string | null };
-type Pessoa = { id: number; nome: string; vinculo: "funcionario" | "terceirizado"; admissao: string | null; alocacoes: Alocacao[] };
+type Pessoa = { id: number; nome: string; vinculo: "funcionario" | "terceirizado"; admissao: string | null; github_login: string | null; alocacoes: Alocacao[] };
 const VINCULOS = { funcionario: "Funcionário", terceirizado: "Terceirizado" } as const;
 type Ausencia = { id: number; pessoa_id: number; nome: string; inicio: string; fim: string; tipo: string };
 
@@ -92,7 +92,7 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
             <button className="botao"><Icone nome="mais" tamanho={16} /> Adicionar</button>
           </form>
           <table>
-            <thead><tr><th>Pessoa</th><th>Vínculo</th><th title="Contratação ou efetivação: início da contagem de férias">Funcionário desde</th><th>Cargo</th><th>Time / frente</th><th className="n">Alocação</th><th>Entrada</th><th>Saída</th><th /></tr></thead>
+            <thead><tr><th>Pessoa</th><th>Vínculo</th><th title="Contratação ou efetivação: início da contagem de férias">Funcionário desde</th><th title="Atribui PRs ao time pela alocação vigente na data do merge">GitHub</th><th>Cargo</th><th>Time / frente</th><th className="n">Alocação</th><th>Entrada</th><th>Saída</th><th /></tr></thead>
             <tbody>
               {pes.flatMap((p) => (p.alocacoes.length ? p.alocacoes : [null]).map((a, i) => (
                 <tr key={`${p.id}-${a?.id ?? "x"}`} className={a?.fim && a.fim < hoje() ? "encerrada" : ""}>
@@ -113,6 +113,10 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
                     <input type="date" className="data-compacta" value={p.admissao ?? ""} aria-label={`Funcionário desde (${p.nome})`}
                       onChange={(e) => e.target.value && executar(() => api("vinculo", "POST", { id: p.id, vinculo: "funcionario", admissao: e.target.value }), `Data de ${p.nome} atualizada.`)()} />
                   )}{i === 0 && p.vinculo === "terceirizado" && <span className="sub">—</span>}</td>
+                  <td>{i === 0 && (
+                    <input className="data-compacta" defaultValue={p.github_login ?? ""} placeholder="login" aria-label={`Login GitHub de ${p.nome}`}
+                      onBlur={(e) => e.target.value.trim() !== (p.github_login ?? "") && executar(() => api("github", "POST", { id: p.id, login: e.target.value }), `GitHub de ${p.nome} atualizado.`)()} />
+                  )}</td>
                   <td>{a?.cargo ?? "—"}</td>
                   <td>{a ? `${a.time}${a.frente ? ` · ${a.frente}` : ""}` : "sem alocação"}</td>
                   <td className="n">{a ? `${Math.round(a.percentual * 100)}%` : ""}</td>

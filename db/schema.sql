@@ -200,6 +200,10 @@ alter table pessoas add constraint pessoas_vinculo_check check (vinculo in ('fun
 -- ponto de partida da contagem de férias. Terceirizados ficam sem data.
 alter table pessoas add column if not exists admissao date;
 
+-- Login do GitHub: atribui PRs ao time/frente pela alocação vigente na data do merge (sem visão individual).
+alter table pessoas add column if not exists github_login text;
+create unique index if not exists pessoas_github_login on pessoas (lower(github_login));
+
 -- Composição do período no histórico (pontos e itens concluídos por tipo, planejamento e roadmap).
 alter table historico_periodos
   add column if not exists tipo_historia_pts numeric, add column if not exists tipo_historia_itens numeric,
