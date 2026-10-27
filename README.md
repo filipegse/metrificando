@@ -16,6 +16,7 @@ Jira Automation ──POST──▶ /api/webhooks/jira  (netlify/functions/jira-
                     coleta-background (até 15 min): perfil → API do Jira → normalização → Postgres
 rede-seguranca (diária): reprocessa sprints fechadas sem coleta ok
 saude-diaria (diária): health checks fechados do TeamRetro → saude_time
+coleta-github (diária) → coleta-github-background: PRs da org no GitHub → itens_pr (DORA/SPACE)
 Next.js (app/): visões
 ```
 
@@ -31,6 +32,16 @@ Next.js (app/): visões
 - N3 = passou pelo status `Enviado para N3`. No Rematrix, o volume vem do SC e o SIS é trabalho N3 (não soma no volume).
 - Kanban (IC, EFC): janela sábado–sexta, America/Bahia.
 - Coleta idempotente por `time + periodo_id`.
+
+## Engenharia (GitHub)
+
+`/engenharia` mostra DORA e fluxo de PRs por time/frente e semana sábado–sexta. Coleta diária (07h Bahia)
+dos PRs atualizados na última semana em todos os repos ativos da org (`GITHUB_ORG`); a primeira carrega 120 dias.
+- Atribuição: chave do Jira de um projeto da TAP no branch/título; senão o login GitHub cadastrado em Pessoas
+  (alocação vigente no merge); senão "não atribuído". Salvar um login reatribui os PRs já coletados.
+- Deploy = merge em master/main/production (o deploy roda no merge); master + production no mesmo dia e repo = 1 release.
+- Falha = release com branch hotfix/, fix/ ou bugfix/. Lead time = PR aberto → merge (PRs que não são deploy).
+- O autor fica gravado só para reatribuição; nenhuma tela mostra pessoa.
 
 ## Modo apresentação
 
