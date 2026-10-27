@@ -9,11 +9,15 @@ export default async () => {
     return;
   }
   const [{ n }] = (await db()`select count(*)::int as n from itens_pr`) as { n: number }[];
-  await fetch(`${process.env.URL}/.netlify/functions/coleta-github-background`, {
+  const dias = n ? 8 : 120;
+  const r = await fetch(`${process.env.URL}/.netlify/functions/coleta-github-background`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-webhook-token": process.env.WEBHOOK_TOKEN ?? "" },
-    body: JSON.stringify({ dias: n ? 8 : 120 }),
+    body: JSON.stringify({ dias }),
   });
+  // Background function responde 202 ao aceitar; qualquer outra coisa é falha no disparo.
+  console.log(`coleta-github: ${n} PRs no banco, pedindo ${dias} dias → HTTP ${r.status}`);
+  if (r.status !== 202) throw new Error(`disparo da coleta falhou: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
 };
 
 export const config: Config = { schedule: "0 10 * * *" }; // 07h America/Bahia

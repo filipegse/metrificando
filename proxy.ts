@@ -22,4 +22,4 @@ export function proxy(req: NextRequest) {
   return new NextResponse("Autenticação necessária", { status: 401, headers: { "WWW-Authenticate": 'Basic realm="Metrificando"' } });
 }
 
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|\\.netlify/).*)"] };
