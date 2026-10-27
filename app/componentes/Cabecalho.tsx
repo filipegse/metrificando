@@ -6,6 +6,7 @@ import { Icone, type NomeIcone } from "./Icone";
 const ITENS: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/", rotulo: "Times e apresentação", icone: "apresentacao" },
   { href: "/analise", rotulo: "Análise", icone: "analise" },
+  { href: "/engenharia", rotulo: "Engenharia", icone: "relogio" },
   { href: "/importar", rotulo: "Importar histórico", icone: "importar" },
   { href: "/dados", rotulo: "Dados históricos", icone: "dados" },
   { href: "/configuracoes", rotulo: "Configurações", icone: "config" },

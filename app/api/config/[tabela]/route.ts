@@ -76,6 +76,11 @@ export async function POST(req: Request, { params }: Ctx) {
       const dono = login ? (await sql`select nome from pessoas where lower(github_login) = lower(${login}) and id <> ${b.id}`) as { nome: string }[] : [];
       if (dono.length) return erro(`login já usado por ${dono[0].nome}`);
       await sql`update pessoas set github_login = ${login} where id = ${b.id}`;
+      // PRs já coletados passam a contar para o time da pessoa (roda em segundo plano).
+      if (process.env.URL) fetch(`${process.env.URL}/.netlify/functions/coleta-github-background`, {
+        method: "POST", headers: { "content-type": "application/json", "x-webhook-token": process.env.WEBHOOK_TOKEN ?? "" },
+        body: JSON.stringify({ reatribuir: true }),
+      }).catch(() => {});
       break;
     }
     case "alocacoes":
