@@ -12,7 +12,7 @@ type Feriado = { data: string; nome: string; abrangencia: string };
 const DIA = 86400000;
 const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
 const dia = (s: string) => Date.parse(`${s}T12:00:00Z`);
-const COR_TIPO: Record<string, string> = { "Férias": "#00e175", "Licença": "#6e00ff", "Folga": "#ffbf00", "Outro": "#61807a" };
+const COR_TIPO: Record<string, string> = { "Férias": "#242CC2", "Licença": "#774BB0", "Folga": "#FFAC30", "Outro": "#65686E" };
 const MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 export function Gantt({ pessoas, ausencias, feriados, times }: { pessoas: Pessoa[]; ausencias: Ausencia[]; feriados: Feriado[]; times: string[] }) {
@@ -167,7 +167,7 @@ function Grupo({ time, lista, dias, fundoDia, feriadoDe, ausencias, de, ate, col
           {ausencias.filter((a) => a.pessoa_id === pessoa.id && a.inicio <= ate && a.fim >= de).map((a) => {
             const ini = Math.max(0, col(a.inicio)), fim = Math.min(dias.length - 1, col(a.fim));
             return (
-              <div key={a.id} className="g-barra" style={{ gridColumn: `${ini + 2} / ${fim + 3}`, background: COR_TIPO[a.tipo] ?? COR_TIPO.Outro, color: a.tipo === "Licença" || !COR_TIPO[a.tipo] || a.tipo === "Outro" ? "#fff" : "#000" }}
+              <div key={a.id} className="g-barra" style={{ gridColumn: `${ini + 2} / ${fim + 3}`, background: COR_TIPO[a.tipo] ?? COR_TIPO.Outro, color: a.tipo === "Férias" || a.tipo === "Licença" || !COR_TIPO[a.tipo] || a.tipo === "Outro" ? "#fff" : "#000" }}
                 title={`${pessoa.nome}: ${a.tipo} de ${a.inicio.split("-").reverse().join("/")} a ${a.fim.split("-").reverse().join("/")}`}>
                 {fim - ini >= 2 ? a.tipo : ""}
               </div>
