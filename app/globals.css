@@ -159,6 +159,11 @@ button.link:disabled { color: var(--muted); cursor: not-allowed; text-decoration
 .abas button { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: var(--t-sm); font-weight: 600; border: 1px solid var(--line-forte);
   background: var(--card); color: var(--fg); border-radius: var(--r-md); padding: 7px 14px; cursor: pointer; }
 .abas button:hover { border-color: var(--petroleo); }
+.abas a { display: inline-flex; align-items: center; gap: 6px; font-family: var(--fonte-titulo); font-size: var(--t-sm); font-weight: 600; border: 1px solid var(--line-forte);
+  background: var(--card); color: var(--fg); border-radius: var(--r-md); padding: 7px 14px; text-decoration: none; }
+.abas a:hover { border-color: var(--petroleo); }
+.abas a.ativa { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
+.abas-pagina { margin: var(--e-3) 0 var(--e-4); }
 .abas button.ativa { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
 .chips, .alternador { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips { max-height: 180px; overflow-y: auto; }

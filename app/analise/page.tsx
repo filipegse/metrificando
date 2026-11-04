@@ -6,6 +6,7 @@ import { db, urlBanco } from "@/lib/db";
 import type { Agrupamento } from "@/lib/agrupamento";
 import { Filtros } from "./Filtros";
 import { Tabela, type LinhaAnalise } from "./Tabela";
+import { AbasMetricas } from "../componentes/AbasMetricas";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Análise — Metrificando" };
@@ -42,7 +43,8 @@ export default async function Analise({ searchParams }: { searchParams: Promise<
 
   return (
     <main className="largo">
-      <h1>Análise em tabela</h1>
+      <h1>Métricas</h1>
+      <AbasMetricas />
       <p className="sub">Todos os indicadores por período, com feriados, dias não úteis e ausências do time como contexto. Visão por time e frente, nunca por pessoa.</p>
       <Filtros
         times={PERFIS.map((p) => ({ projeto: p.projeto, time: p.time, frentes: p.sprintsPorFrente?.map((f) => f.frente) ?? p.frentes ?? [], scrum: p.metodologia === "scrum" }))}

@@ -4,9 +4,7 @@ import { usePathname } from "next/navigation";
 import { Icone, type NomeIcone } from "./Icone";
 
 const ITENS: { href: string; rotulo: string; icone: NomeIcone }[] = [
-  { href: "/", rotulo: "Times e apresentação", icone: "apresentacao" },
-  { href: "/analise", rotulo: "Análise", icone: "analise" },
-  { href: "/engenharia", rotulo: "Engenharia", icone: "relogio" },
+  { href: "/", rotulo: "Métricas", icone: "analise" },
   { href: "/configuracoes", rotulo: "Configurações", icone: "config" },
 ];
 
@@ -21,7 +19,9 @@ export function Cabecalho() {
       </a>
       <nav className="menu" aria-label="Principal">
         {ITENS.map((i) => {
-          const ativo = i.href === "/" ? caminho === "/" : caminho?.startsWith(i.href);
+          const ativo = i.href === "/"
+            ? ["/", "/analise", "/engenharia"].some((r) => (r === "/" ? caminho === "/" : caminho?.startsWith(r)))
+            : caminho?.startsWith(i.href);
           return (
             <a key={i.href} href={i.href} className={ativo ? "ativo" : ""} aria-current={ativo ? "page" : undefined}>
               <Icone nome={i.icone} /> <span>{i.rotulo}</span>
