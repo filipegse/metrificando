@@ -272,11 +272,18 @@ table.editavel td.destaque-tl input { color: var(--perigo); font-weight: 700; }
 .passos li.atual .num { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
 .passos li.feito .num { background: var(--color-positive); border-color: var(--color-positive); color: #fff; }
 .rodape-assistente { display: flex; justify-content: space-between; margin-top: var(--e-4); }
-.lista-slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--e-3); }
-.item-slide { display: flex; gap: 12px; align-items: flex-start; }
-.item-slide input { margin-top: 4px; accent-color: var(--verde-2); }
-.item-slide h3 { margin: 0 0 4px; font-size: var(--t-md, 16px); }
-.item-slide p { margin: 0; color: var(--cinza-verde); font-size: var(--t-sm); }
+/* Seleção de slides: lista de uma coluna, uma linha por slide. */
+.lista-slides { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.item-slide { display: flex; gap: var(--e-3); align-items: flex-start; padding: var(--e-3) var(--e-5); cursor: pointer;
+  border-bottom: 1px solid var(--line); box-shadow: inset 3px 0 0 transparent; transition: background .15s; }
+.item-slide:last-child { border-bottom: 0; }
+.item-slide:hover { background: var(--suave); }
+.item-slide.ativo { box-shadow: inset 3px 0 0 var(--acao); }
+.item-slide:not(.ativo) :is(h3, p) { color: var(--muted); }
+.item-slide:has(input:focus-visible) { box-shadow: inset 3px 0 0 var(--acao), inset 0 0 0 2px color-mix(in srgb, var(--acao) 35%, transparent); }
+.item-slide input { margin-top: 3px; flex: none; accent-color: var(--acao); }
+.item-slide h3 { margin: 0 0 2px; font-size: var(--t-md); font-weight: 600; }
+.item-slide p { margin: 0; color: var(--muted); font-size: var(--t-sm); }
 .etiqueta { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--suave); border: 1px solid var(--line-forte); font-size: 12px; font-weight: 600; vertical-align: middle; }
 .dica { margin: 6px 0 0; color: var(--cinza-verde); font-size: var(--t-sm); }
 .confirmacao dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: var(--e-3) 0; }
