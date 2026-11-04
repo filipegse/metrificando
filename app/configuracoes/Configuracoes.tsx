@@ -2,6 +2,9 @@
 import { Icone } from "../componentes/Icone";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Gantt } from "./Gantt";
+import { Importador } from "../importar/Importador";
+import { EditorDados } from "../dados/EditorDados";
+import type { Aba } from "./abas";
 
 type Expediente = { valido_de: string; inicio: string; fim: string };
 type Feriado = { data: string; nome: string; abrangencia: string };
@@ -30,8 +33,16 @@ function formulario(e: FormEvent<HTMLFormElement>) {
   return Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
 }
 
-export function Configuracoes({ times }: { times: { time: string; frentes: string[] }[] }) {
-  const [aba, setAba] = useState<"calendario" | "expediente" | "feriados" | "pessoas" | "ausencias">("calendario");
+export function Configuracoes({ times, inicialAba = "calendario", inicialTime }: { times: { time: string; frentes: string[] }[]; inicialAba?: Aba; inicialTime?: string }) {
+  const [aba, setAbaEstado] = useState<Aba>(inicialAba);
+  // A aba fica na URL (?aba=) para que links e o botão voltar funcionem.
+  const setAba = (a: Aba) => {
+    setAbaEstado(a);
+    const url = new URL(window.location.href);
+    if (a === "calendario") url.searchParams.delete("aba"); else url.searchParams.set("aba", a);
+    if (a !== "dados") url.searchParams.delete("time");
+    window.history.replaceState(null, "", url);
+  };
   const [exp, setExp] = useState<Expediente[]>([]);
   const [fer, setFer] = useState<Feriado[]>([]);
   const [pes, setPes] = useState<Pessoa[]>([]);
@@ -66,11 +77,14 @@ export function Configuracoes({ times }: { times: { time: string; frentes: strin
   return (
     <div className="config">
       <nav className="abas">
-        {([["calendario", "Calendário", "calendario"], ["pessoas", "Pessoas e alocações", "pessoas"], ["ausencias", "Ausências", "ausencia"], ["feriados", "Feriados", "bandeira"], ["expediente", "Expediente", "relogio"]] as const).map(([k, r, ic]) => (
+        {([["calendario", "Calendário", "calendario"], ["pessoas", "Pessoas e alocações", "pessoas"], ["ausencias", "Ausências", "ausencia"], ["feriados", "Feriados", "bandeira"], ["expediente", "Expediente", "relogio"], ["importar", "Importar histórico", "importar"], ["dados", "Dados históricos", "dados"]] as const).map(([k, r, ic]) => (
           <button key={k} type="button" className={aba === k ? "ativa" : ""} onClick={() => setAba(k)}><Icone nome={ic} tamanho={16} /> {r}</button>
         ))}
       </nav>
       {msg && <p className="msg">{msg}</p>}
+
+      {aba === "importar" && <Importador />}
+      {aba === "dados" && <EditorDados times={times} inicial={inicialTime} />}
 
       {aba === "calendario" && <Gantt pessoas={pes} ausencias={aus} feriados={fer} times={times.map((t) => t.time)} />}
 

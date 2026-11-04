@@ -70,21 +70,32 @@ b, strong { font-weight: 700; }
 .icone { flex: none; display: inline-block; vertical-align: -.2em; }
 
 /* ---------- Layout ---------- */
-main { max-width: 1160px; margin: 0 auto; padding: var(--e-5) var(--e-4) var(--e-6); }
+main { max-width: 1160px; width: 100%; margin: 0 auto; padding: var(--e-5) var(--e-4) var(--e-6); }
 main.largo { max-width: 1440px; }
 main > * { min-width: 0; }
-.topo { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--e-5); flex-wrap: wrap;
-  padding: var(--e-2) var(--e-5); background: var(--card); border-bottom: 1px solid var(--line); }
-.marca-app { display: flex; align-items: center; gap: var(--e-2); text-decoration: none; color: var(--fg); }
+/* Menu lateral (vertical). Em telas estreitas vira uma barra no topo só com ícones. */
+body:has(> .lateral) { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.lateral { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: var(--e-5);
+  padding: var(--e-5) var(--e-4); background: var(--card); border-right: 1px solid var(--line); overflow-y: auto; }
+.marca-app { display: flex; align-items: center; gap: var(--e-2); text-decoration: none; color: var(--fg); padding: 0 var(--e-2); }
 .marca-app b { display: block; font-size: 1.05rem; line-height: 1.1; }
 .marca-app small { display: block; font-size: var(--t-xs); color: var(--muted); }
-.sinal-app { width: 22px; height: 28px; background: url("/marca/sinal.svg") no-repeat center / contain; }
-.menu { display: flex; gap: var(--e-1); flex-wrap: wrap; margin-left: auto; }
-.menu a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r-md); text-decoration: none;
+.sinal-app { width: 22px; height: 28px; flex: none; background: url("/marca/sinal.svg") no-repeat center / contain; }
+.menu { display: flex; flex-direction: column; gap: var(--e-1); }
+.menu a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-md); text-decoration: none;
   color: var(--fg); font-size: var(--t-sm); font-weight: 600; }
 .menu a:hover { background: var(--suave); }
 .menu a.ativo { background: var(--acao); color: var(--sobre-acao); }
-@media (max-width: 760px) { .menu a span { display: none; } .menu a { padding: 8px; } .topo { padding: var(--e-2) var(--e-4); } }
+.menu a:focus-visible { outline: none; box-shadow: var(--foco); }
+@media (max-width: 760px) {
+  body:has(> .lateral) { display: block; }
+  .lateral { position: sticky; z-index: 5; height: auto; flex-direction: row; align-items: center; gap: var(--e-3);
+    padding: var(--e-2) var(--e-4); border-right: 0; border-bottom: 1px solid var(--line); }
+  .marca-app small { display: none; }
+  .menu { flex-direction: row; margin-left: auto; }
+  .menu a span { display: none; } .menu a { padding: 8px; }
+  .barra { top: 60px; }
+}
 
 /* ---------- Superfícies ---------- */
 .card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--e-4) var(--e-5); box-shadow: var(--sombra); min-width: 0; }
@@ -169,7 +180,7 @@ td.vazio { color: var(--muted); text-align: center; padding: var(--e-4); }
 
 /* Times e apresentação */
 .barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3) var(--e-4); margin-bottom: var(--e-4); padding: var(--e-3) var(--e-4);
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sombra); position: sticky; top: 64px; z-index: 2; }
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sombra); position: sticky; top: var(--e-2); z-index: 2; }
 .barra > label:not(.opcao) { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); color: var(--fg); }
 .filtros .sub, .linha-form .sub { margin: 0 0 9px; font-size: var(--t-sm); }
 .barra .contagem { color: var(--muted); font-size: var(--t-sm); flex: 1; min-width: 180px; }
