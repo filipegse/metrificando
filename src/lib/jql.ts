@@ -17,7 +17,7 @@ export function jqlDeliveryJanela(perfil: Perfil, inicio: Date, fim: Date): stri
 export function jqlSuporte(fonte: FonteSuporte, inicio: Date, fim: Date): string {
   const partes = [`project = ${fonte.projeto}`];
   if (fonte.porTipo) partes.push(`issuetype = "${TIPO_SUPORTE}"`);
-  if (fonte.filtroTeam) partes.push(`cf[10500] = "${fonte.filtroTeam}"`); // campo Team
+  if (fonte.filtroTeam) partes.push(`cf[10500] = "${fonte.filtroTeam.id}"`); // campo Team: casa pelo id, não pelo nome
   partes.push(`status CHANGED TO "${fonte.statusResolucao}" DURING ("${data(inicio)}", "${data(fim)}")`);
   return partes.join(" AND ");
 }
