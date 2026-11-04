@@ -34,8 +34,11 @@ export type FonteSuporte = {
   mapa: S.MapaStatus;
   /** Status cuja entrada marca a resolução do chamado. */
   statusResolucao: string;
-  /** Filtro adicional por campo (ex.: Team no SP). */
-  filtroTeam?: string;
+  /**
+   * Campo Team (customfield_10500) é um campo de Times da Atlassian: o JQL só casa pelo id do time.
+   * Buscar pelo nome devolve zero itens sem erro. O nome fica só para leitura.
+   */
+  filtroTeam?: { id: string; nome: string };
   /** chamado = conta no volume; trabalho_n3 = mede fluxo N3, não soma no volume. */
   papel: "chamado" | "trabalho_n3";
   /** Origem do suporte: projeto próprio ou tipo Suporte no projeto de delivery. */
@@ -86,7 +89,7 @@ export const PERFIS: Perfil[] = [
     time: "Nexus", teamRetroId: "1XtWnmAm96BUaqWKtZrP6O", projeto: "NXS", metodologia: "scrum", periodo: "sprint",
     campoFrente: { id: CAMPOS.frenteDeTrabalho, nome: "Frente de Trabalho" }, frentes: ["Integrações", "Avaliações"],
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
-    suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Nexus", papel: "chamado", naSprint: false }],
+    suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: { id: "55406af3-f58e-4242-95cd-0e65acea67d8-39", nome: "[TAP] Time Nexus" }, papel: "chamado", naSprint: false }],
   },
   {
     time: "Rematrix", teamRetroId: "4dG5bApVdvVffVbcJlCNgA", projeto: "IC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-09-09", ancoraQuinzena: "2026-06-27",
@@ -100,7 +103,7 @@ export const PERFIS: Perfil[] = [
     time: "Eficientes", teamRetroId: "5AdSqS9J5M8Zk9pLNLZwoG", projeto: "EFC", metodologia: "kanban", periodo: "semana_sab_sex", validoDe: "2026-08-29", ancoraQuinzena: "2026-06-20",
     campoFrente: { id: CAMPOS.frente, nome: "Frente" }, frentes: ["Pedagógico", "Folha de Professores"],
     mapaDelivery: S.DELIVERY_PADRAO_TAP, tiposDelivery: null,
-    suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: "[TAP] Time Eficientes", papel: "chamado", naSprint: false }],
+    suporte: [{ projeto: "SP", mapa: S.SUPORTE_SP, statusResolucao: "Concluído", filtroTeam: { id: "55406af3-f58e-4242-95cd-0e65acea67d8-41", nome: "[TAP] Time Eficientes" }, papel: "chamado", naSprint: false }],
   },
   {
     time: "Retaguarda", teamRetroId: "0xyBwhNazOm4TFtWoF0bRn", teamRetroSeries: [{ titulo: /^(Retaguarda|Sprint)\s+\d+/i, frente: "Retaguarda" }, { titulo: /^X-Reta\b/i, frente: "X-Retaguarda" }],

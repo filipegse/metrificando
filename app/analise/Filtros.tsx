@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SelecaoEtiquetas } from "../componentes/SelecaoEtiquetas";
 
 type Time = { projeto: string; time: string; frentes: string[]; scrum: boolean };
 type Atual = { time: string; frente: string; de: string; ate: string; g: string; s: string[] };
@@ -41,11 +42,9 @@ export function Filtros({ times, atual, sprints }: { times: Time[]; atual: Atual
         </select>
       </label>
       {sprints.length > 0 && (
-        <label>Sprints {f.s.length > 0 && <button type="button" className="link" onClick={() => aplicar({ ...f, s: [] })}>usar período</button>}
-          <select multiple size={4} value={f.s} onChange={(e) => aplicar({ ...f, s: [...e.target.selectedOptions].map((o) => o.value) })}>
-            {sprints.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-          </select>
-        </label>
+        <SelecaoEtiquetas rotulo="Sprints/Semana" vazio="Todas do período (De/Até)"
+          opcoes={sprints.map((s) => ({ valor: s.id, rotulo: s.nome }))} valor={f.s}
+          onAplicar={(s) => aplicar({ ...f, s })} />
       )}
     </section>
   );

@@ -253,11 +253,11 @@ export function Seletor({ cartoes, trimestres, inicial = {} }: { cartoes: Cartao
             <button type="button" className="link" onClick={() => setSlides(new Set(TODOS_SLIDES))}>Marcar todos</button>
             <button type="button" className="link" onClick={() => setSlides(new Set())}>Desmarcar todos</button>
           </div>
-          <div className="lista-slides">
+          <div className="card lista-slides">
             {slidesAplicaveis.map((s) => {
               const ativo = slides.has(s.chave);
               return (
-                <label key={s.chave} className={`card selecionavel item-slide ${ativo ? "ativo" : ""}`}>
+                <label key={s.chave} className={`item-slide ${ativo ? "ativo" : ""}`}>
                   <input type="checkbox" checked={ativo} onChange={() => setSlides((x) => { const n = new Set(x); n.has(s.chave) ? n.delete(s.chave) : n.add(s.chave); return n; })} />
                   <div>
                     <h3>{s.titulo} {s.metodologia && <span className="etiqueta">só {s.metodologia === "scrum" ? "Scrum" : "Kanban"}</span>}</h3>

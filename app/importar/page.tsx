@@ -1,16 +1,6 @@
-import { Importador } from "./Importador";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Importar histórico — Metrificando" };
-
+// A importação agora é uma aba de Configurações; o endereço antigo continua funcionando.
 export default function Pagina() {
-  return (
-    <main>
-      <h1>Importar histórico</h1>
-      <p className="sub">
-        Exporte a aba da planilha como CSV (Arquivo → Fazer download → CSV) e envie aqui. As colunas são reconhecidas pelo
-        título do cabeçalho. Confira o mapeamento e a prévia antes de importar. Reimportar a mesma sprint substitui os valores.
-      </p>
-      <Importador />
-    </main>
-  );
+  redirect("/configuracoes?aba=importar");
 }

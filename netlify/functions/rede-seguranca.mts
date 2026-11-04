@@ -4,7 +4,7 @@
 import type { Config } from "@netlify/functions";
 import { PERFIS } from "../../src/config/perfis";
 import { db } from "../../src/lib/db";
-import { agile } from "../../src/lib/jira";
+import { agile, boardsDoProjeto, sprintsDoBoard } from "../../src/lib/jira";
 import { janelaFechada, janelaSemanal } from "../../src/lib/periodo";
 
 const JANELA_DIAS = 30;
@@ -13,10 +13,13 @@ export default async () => {
   const sql = db();
   const limite = Date.now() - JANELA_DIAS * 24 * 60 * 60 * 1000;
   for (const perfil of PERFIS.filter((p) => p.metodologia === "scrum")) {
-    const boards = await agile<{ values: { id: number }[] }>(`board?projectKeyOrId=${perfil.projeto}&type=scrum`);
-    for (const board of boards.values) {
+    const boards = await agile<{ values: { id: number; location?: { projectKey?: string } }[] }>(`board?projectKeyOrId=${perfil.projeto}&type=scrum`);
+    const vistas = new Set<string>();
+    for (const board of boardsDoProjeto(boards.values, perfil.projeto)) {
       const sprints = await agile<{ values: any[] }>(`board/${board.id}/sprint?state=closed&maxResults=50`);
-      for (const s of sprints.values.filter((s) => s.completeDate && new Date(s.completeDate).getTime() > limite)) {
+      for (const s of sprintsDoBoard(sprints.values, board.id).filter((s) => s.completeDate && new Date(s.completeDate).getTime() > limite)) {
+        if (vistas.has(String(s.id))) continue;
+        vistas.add(String(s.id));
         const ok = await sql`select 1 from coletas where time = ${perfil.time} and periodo_id = ${String(s.id)} and status = 'ok' limit 1`;
         if (ok.length) continue;
         await fetch(`${process.env.URL}/.netlify/functions/coleta-background`, {

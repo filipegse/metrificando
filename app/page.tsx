@@ -3,6 +3,7 @@ import { PERFIS } from "@/config/perfis";
 import { db, urlBanco } from "@/lib/db";
 import { Seletor } from "./Seletor";
 import { lerDeckSalvo } from "@/lib/decks";
+import { AbasMetricas } from "./componentes/AbasMetricas";
 
 /** Trimestre atual e os anteriores, no formato AAAA-QN. */
 function ultimosTrimestres(n: number): string[] {
@@ -66,7 +67,8 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<R
   const [resumos, sprints] = await Promise.all([carregar(), sprintsDisponiveis()]);
   return (
     <main>
-      <h1>Times e apresentação</h1>
+      <h1>Métricas</h1>
+      <AbasMetricas />
       <p className="sub">Último período coletado de cada time. Visão por time e frente, nunca por pessoa. Monte o deck da Sync em quatro passos.</p>
       <Seletor inicial={inicial} trimestres={ultimosTrimestres(4)} cartoes={PERFIS.map((perfil) => {
         const r = resumos.find((x) => x.time === perfil.time);

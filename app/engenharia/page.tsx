@@ -4,6 +4,7 @@ import { PERFIS } from "../../src/config/perfis";
 import { db, urlBanco } from "../../src/lib/db";
 import { indicadores, type PR } from "../../src/lib/github";
 import { janelaSemanal } from "../../src/lib/periodo";
+import { AbasMetricas } from "../componentes/AbasMetricas";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Engenharia — Metrificando" };
@@ -38,7 +39,8 @@ export default async function Engenharia({ searchParams }: { searchParams: Promi
 
   return (
     <main className="largo">
-      <h1>Engenharia</h1>
+      <h1>Métricas</h1>
+      <AbasMetricas />
       <p className="sub">
         DORA e fluxo de PRs do GitHub, semanas sábado–sexta. Deploy = merge em master/main/production (release de um repo num dia conta uma vez);
         falha = deploy com branch hotfix/fix/bugfix. Lead time = PR aberto → merge. Atribuição: chave do Jira no branch/título, senão o login

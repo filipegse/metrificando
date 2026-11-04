@@ -6,11 +6,13 @@ import { db, urlBanco } from "@/lib/db";
 import type { Agrupamento } from "@/lib/agrupamento";
 import { Filtros } from "./Filtros";
 import { Tabela, type LinhaAnalise } from "./Tabela";
+import { AbasMetricas } from "../componentes/AbasMetricas";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Análise — Metrificando" };
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
+const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 
 export default async function Analise({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const q = await searchParams;
@@ -25,9 +27,11 @@ export default async function Analise({ searchParams }: { searchParams: Promise<
 
   const demo = !urlBanco();
   const sprints = demo ? [] : ((await db()`
-    select periodo_id as id, coalesce(nome, periodo_id) as nome, frente, fim::text from periodos where time = ${perfil.time} and tipo = 'sprint'
-    union all select 'h:' || nome, nome, frente, fim::text from historico_periodos where time = ${perfil.time} and tipo = 'sprint'
-    order by fim desc limit 300`) as { id: string; nome: string; frente: string; fim: string }[])
+    select periodo_id as id, nome, tipo, inicio::date::text as inicio, frente, fim::date::text as fim from periodos where time = ${perfil.time}
+    union all select 'h:' || nome, nome, tipo, inicio::text, frente, fim::text from historico_periodos where time = ${perfil.time}
+    order by fim desc limit 300`) as { id: string; nome: string | null; tipo: string; inicio: string | null; frente: string; fim: string }[])
+    // Semanas Kanban não têm nome no Jira: o rótulo é o intervalo sábado–sexta.
+    .map((s) => ({ ...s, nome: s.nome ?? `Semana ${dm(s.inicio ?? s.fim)}–${dm(s.fim)}` }))
     .filter((s) => !frente || !perfil.sprintsPorFrente || s.frente === frente);
 
   const recorte: Recorte = {
@@ -42,7 +46,8 @@ export default async function Analise({ searchParams }: { searchParams: Promise<
 
   return (
     <main className="largo">
-      <h1>Análise em tabela</h1>
+      <h1>Métricas</h1>
+      <AbasMetricas />
       <p className="sub">Todos os indicadores por período, com feriados, dias não úteis e ausências do time como contexto. Visão por time e frente, nunca por pessoa.</p>
       <Filtros
         times={PERFIS.map((p) => ({ projeto: p.projeto, time: p.time, frentes: p.sprintsPorFrente?.map((f) => f.frente) ?? p.frentes ?? [], scrum: p.metodologia === "scrum" }))}

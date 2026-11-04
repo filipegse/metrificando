@@ -89,7 +89,7 @@ export function EditorDados({ times, inicial }: { times: { time: string; frentes
     } catch (e) { setMsg(`Não foi possível carregar: ${(e as Error).message}`); }
     setCarregando(false);
   }, [time]);
-  useEffect(() => { recarregar(); history.replaceState(null, "", `?time=${encodeURIComponent(time)}`); }, [recarregar, time]);
+  useEffect(() => { recarregar(); const url = new URL(window.location.href); url.searchParams.set("time", time); history.replaceState(null, "", url); }, [recarregar, time]);
 
   const visiveis = useMemo(() => linhas.filter((l) => frente === "*" || l.frente === frente), [linhas, frente]);
   const semNome = !usuario.trim();
