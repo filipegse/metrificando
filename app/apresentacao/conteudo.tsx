@@ -1,6 +1,5 @@
 // Modo apresentação no formato da Sync de Agilidade.
 // /apresentacao/<id> (deck salvo pelo assistente) ou /apresentacao?trimestre=2026-Q4&times=SCOPS,DSR,IC (demo=1 usa dados fictícios)
-import { Work_Sans } from "next/font/google";
 import { PERFIS } from "@/config/perfis";
 import { carregarDeck, chaveLeitura, deckDemo, metodologiaDe, nomeDoTime, recortesDaUrl, trimestreAtual, type DadosDeck, type DadosTime } from "@/lib/apresentacao";
 import { corEntrega, corExtras, corGanho, corPontos, corSaude, percentil, segundaDaSemana, tlEmDestaque, type Indicadores } from "@/lib/indicadores";
@@ -14,7 +13,6 @@ import { dataCurta, detalheContexto, resumoContexto } from "@/lib/contexto";
 import "./deck.css";
 
 // Reserva até os arquivos da At Hauss Aero (fonte oficial, licenciada) estarem em public/fonts.
-const fonte = Work_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--fonte-reserva" });
 
 
 const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)}%`);
@@ -55,7 +53,7 @@ function Cabecalho({ t, eyebrow, titulo, sub }: { t: DadosTime; eyebrow: string;
 }
 
 /** Grafismos Movimento do brandbook: retângulos inclinados em progressão. */
-function Grafismo({ tipo, cor = "#00e175" }: { tipo: "linhas" | "blocos"; cor?: string }) {
+function Grafismo({ tipo, cor = "#30B7BE" }: { tipo: "linhas" | "blocos"; cor?: string }) {
   if (tipo === "linhas") {
     const linhas = [[150, 0, 90, 300], [300, 0, 250, 220], [470, 0, 420, 160], [590, 0, 555, 90], [1240, 40, 1262, 540], [1190, 290, 1196, 560]];
     return (
@@ -111,7 +109,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
 
   const capa = (
     <Slide escuro key="capa" demo={d.demo} pedagogico={PEDAGOGICOS.has(t.perfil.projeto)}>
-      <Grafismo tipo="blocos" cor={PEDAGOGICOS.has(t.perfil.projeto) ? "#ff47ff" : "#00e175"} />
+      <Grafismo tipo="blocos" cor={PEDAGOGICOS.has(t.perfil.projeto) ? "#BA4F93" : "#30B7BE"} />
       <span className="tap" aria-label="TAP" />
       <span className="assinatura branca" aria-label="Grupo Salta" />
       <div className="capa">
@@ -236,7 +234,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
     </Slide>,
     <Slide key="cycle" rodape={rodape} demo={d.demo}>
       <Cabecalho t={t} eyebrow="FLUXO" titulo="Tempo de ciclo" sub={`Dias úteis ${desdeDev ? "a partir do desenvolvimento (sem A Fazer)" : "da entrada em A Fazer"} até Concluído · P50 e P85${g ? ` · ${g[1]} = média dos períodos ponderada por itens` : ""}${avisoMedia}`} />
-      <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
+      <div className="grafico"><Linhas rotulos={rot} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#30B7BE" }]} formato={num} /></div>
       <Faixa slide="cycle" />
     </Slide>,
   );
@@ -245,7 +243,7 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
     slides.push(
       <Slide key="saude" rodape={rodape} demo={d.demo}>
         <Cabecalho t={t} eyebrow="MORAL DO TIME" titulo="Produtividade e motivação" sub="Health check TeamRetro (Squad Feeling v2) · média das percepções coletiva e individual" />
-        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#007875" }]} formato={pct} referencia={{ valor: 0.9, rotulo: "90%" }} /></div>
+        <div className="grafico"><Barras rotulos={rot} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#30B7BE" }]} formato={pct} referencia={{ valor: 0.9, rotulo: "90%" }} /></div>
         <Faixa slide="saude" />
       </Slide>,
     );
@@ -287,8 +285,8 @@ function slidesDoTime(d: DadosDeck, t: DadosTime, escolhidos: Set<string>) {
       <div className="grafico metade"><h3>Chamados por nível</h3>
         <Barras largura={560} rotulos={rot} series={[
           { nome: "N2", valores: ps.map((p) => (p.chamados == null ? null : p.chamados - (p.chamadosN3 ?? 0))) },
-          { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#007875" },
-          ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#61807a" }] : []),
+          { nome: "N3", valores: ps.map((p) => p.chamadosN3), cor: "#30B7BE" },
+          ...(t.perfil.suporte.some((f) => f.papel === "trabalho_n3") ? [{ nome: "Trabalho N3 (SIS)", valores: ps.map((p) => p.trabalhoN3), cor: "#65686E" }] : []),
         ]} />
       </div>
       <div className="grafico metade"><h3>Tempo de resolução P50 (dias)</h3>
@@ -335,9 +333,9 @@ function slideTransicao(d: DadosDeck, scrum: DadosTime, kanban: DadosTime) {
       <div className="subtitulo">Só indicadores comparáveis entre as fases · sprints convertidas em taxa semanal · linha tracejada = migração</div>
       <div className="quadro4">
         <div><h3>Itens entregues por semana</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Itens/semana", valores: ps.map((p) => porSemana(p, p.itensEntregues)) }]} formato={num} /></div>
-        <div><h3>Tempo de ciclo P50 (dias úteis)</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#007875" }]} formato={num} /></div>
+        <div><h3>Tempo de ciclo P50 (dias úteis)</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "P50", valores: ps.map((p) => p.cycleP50) }, { nome: "P85", valores: ps.map((p) => p.cycleP85), cor: "#30B7BE" }]} formato={num} /></div>
         <div><h3>Chamados resolvidos por semana</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Chamados/semana", valores: ps.map((p) => porSemana(p, p.chamados)) }]} formato={num} /></div>
-        <div><h3>Moral do time</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#007875" }]} formato={pct} /></div>
+        <div><h3>Moral do time</h3><Linhas largura={560} altura={190} rotulos={rot} marco={marco} series={[{ nome: "Produtividade", valores: ps.map((p) => p.produtividade) }, { nome: "Motivação", valores: ps.map((p) => p.motivacao), cor: "#30B7BE" }]} formato={pct} /></div>
       </div>
       <div className="faixa"><b>Leitura:</b>{L("transicao")}</div>
     </Slide>
@@ -356,7 +354,7 @@ export async function renderizarDeck(q: Record<string, string | undefined>, volt
   const d = demo ? deckDemo(deck, projetos, recortes, q.demo === "misto") : await carregarDeck(deck, projetos, recortes);
 
   return (
-    <div className={fonte.variable}>
+    <div>
       <Deck voltar={voltar} imprimir={q.imprimir === "1"}>
         <section className="slide verde" key="abertura">
           <Grafismo tipo="linhas" />

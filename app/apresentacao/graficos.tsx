@@ -1,8 +1,8 @@
 // Gráficos SVG sem dependência. Dimensão interna fixa; o slide é escalado inteiro.
 
 // Paleta institucional Grupo Salta (brandbook) primeiro; depois um tom de cada paleta de área para séries extras.
-export const PALETA = ["#00e175", "#007875", "#61807a", "#ffbf00", "#6e00ff", "#1433b0", "#ff47ff", "#c74f24"];
-export const COR = { texto: "#000000", eixo: "#61807a", grade: "#dfe6e4", referencia: "#c74f24" };
+export const PALETA = ["#242CC2", "#30B7BE", "#65686E", "#FFAC30", "#774BB0", "#191F88", "#9D0364", "#E65637"];
+export const COR = { texto: "#0F0F10", eixo: "#65686E", grade: "#EBEDF1", referencia: "#E65637" };
 
 /**
  * Cor fixa por categoria, para a mesma categoria ter a mesma cor em todos os gráficos.
@@ -10,12 +10,12 @@ export const COR = { texto: "#000000", eixo: "#61807a", grade: "#dfe6e4", refere
  * roxos (pedagógico) = operacional e ajuste.
  */
 export const COR_CATEGORIA: Record<string, string> = {
-  "História": "#00e175", "Grandes entregas": "#00e175", "Pequenas entregas": "#007875",
-  "Tecnologia": "#1433b0", "Evolução técnica": "#00dbff",
-  "Correção": "#ff47ff", "Suporte/rotina": "#ff9eff",
-  "Operacional": "#6e00ff", "Ajuste": "#594582",
-  "Planejado": "#00e175", "Extra": "#007875", "Bônus": "#61807a", "Padrão": "#00e175", "Urgente": "#ff47ff",
-  "Sem categoria": "#c9d3d0", "Sem classificação": "#c9d3d0", "Outro": "#c9d3d0",
+  "História": "#242CC2", "Grandes entregas": "#242CC2", "Pequenas entregas": "#30B7BE",
+  "Tecnologia": "#191F88", "Evolução técnica": "#6ECDD1",
+  "Correção": "#9D0364", "Suporte/rotina": "#D89AC1",
+  "Operacional": "#774BB0", "Ajuste": "#53347B",
+  "Planejado": "#242CC2", "Extra": "#30B7BE", "Bônus": "#65686E", "Padrão": "#242CC2", "Urgente": "#9D0364",
+  "Sem categoria": "#C3C8D1", "Sem classificação": "#C3C8D1", "Outro": "#C3C8D1",
 };
 
 /** Preto ou branco, o que tiver mais contraste com o fundo. */
