@@ -67,14 +67,29 @@ do Jira) e acumulados entre trimestres.
    e, até existir login, `APP_USUARIO`/`APP_SENHA` (senha única para abrir a aplicação).
 3. Schema: aplicado automaticamente em cada deploy (`npm run db:schema` antes do build; comandos idempotentes).
 4. Jira Automation:
-   - Scrum (SCOPS, DSR, NXS, TRG, CF): gatilho **Sprint completed** → **Send web request**
-     `POST https://<site>/api/webhooks/jira`, header `X-Webhook-Token: <WEBHOOK_TOKEN>`, corpo:
+   - Scrum (SCOPS, DSR, NXS, TRG, CF): uma regra por projeto, com escopo só no próprio projeto.
+     Gatilho **Sprint completed** (selecionando o(s) board(s) do time) → **Send web request**
+     `POST https://<site>/api/webhooks/jira`, header `X-Webhook-Token: <WEBHOOK_TOKEN>`,
+     `Content-Type: application/json`, corpo (troque `SCOPS` pela chave do projeto):
      ```json
-     {"evento":"sprint_concluida","projeto":"{{project.key}}","sprint_id":"{{sprint.id}}",
+     {"evento":"sprint_concluida","projeto":"SCOPS","sprint_id":"{{sprint.id}}",
       "sprint_nome":"{{sprint.name}}","inicio":"{{sprint.startDate}}","fim":"{{sprint.completeDate}}"}
      ```
+     - Escreva a chave do projeto direto no corpo. `{{project.key}}` pode vir vazio ou com outro
+       projeto no gatilho de sprint quando o board é compartilhado, e aí o webhook responde 400.
+     - **TRG**: uma regra só, com os boards da Retaguarda e da X-Retaguarda no gatilho. A frente vem
+       do nome da sprint (`sprintsPorFrente` em `src/config/perfis.ts`): nome começando com
+       `Sprint <n>` (ex.: `Sprint 110 - 13/10 - 26/10`) é **Retaguarda**; começando com `X-Reta`
+       (ex.: `X-Reta | Sprint 132`) é **X-Retaguarda**. Fora desses padrões a sprint entra sem frente.
+     - **CF** não tem frentes; o nome da sprint não interfere.
+     - Conferência: o *Audit log* da regra deve mostrar **202** `{"aceito":true}`
+       (401 = token errado; 400 = corpo inválido ou projeto sem perfil).
+     - Se a automação falhar, a rede de segurança diária (06h) coleta sprints fechadas nos últimos
+       30 dias que ficaram sem coleta `ok`, considerando só sprints criadas no board do próprio time.
    - Kanban (IC, EFC): gatilho **Scheduled** sexta 23h → mesmo request com
      `{"evento":"janela_semanal","projeto":"IC"}` (ou `EFC`).
+     Para recoletar uma semana antiga, envie `"referencia"` com a sexta que fecha a janela
+     (ex.: `"referencia":"2026-09-04T23:00:00-03:00"`). Recoletar substitui o período inteiro.
 
 ## Desenvolvimento
 
