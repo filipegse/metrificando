@@ -70,21 +70,32 @@ b, strong { font-weight: 700; }
 .icone { flex: none; display: inline-block; vertical-align: -.2em; }
 
 /* ---------- Layout ---------- */
-main { max-width: 1160px; margin: 0 auto; padding: var(--e-5) var(--e-4) var(--e-6); }
+main { max-width: 1160px; width: 100%; margin: 0 auto; padding: var(--e-5) var(--e-4) var(--e-6); }
 main.largo { max-width: 1440px; }
 main > * { min-width: 0; }
-.topo { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: var(--e-5); flex-wrap: wrap;
-  padding: var(--e-2) var(--e-5); background: var(--card); border-bottom: 1px solid var(--line); }
-.marca-app { display: flex; align-items: center; gap: var(--e-2); text-decoration: none; color: var(--fg); }
+/* Menu lateral (vertical). Em telas estreitas vira uma barra no topo só com ícones. */
+body:has(> .lateral) { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.lateral { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: var(--e-5);
+  padding: var(--e-5) var(--e-4); background: var(--card); border-right: 1px solid var(--line); overflow-y: auto; }
+.marca-app { display: flex; align-items: center; gap: var(--e-2); text-decoration: none; color: var(--fg); padding: 0 var(--e-2); }
 .marca-app b { display: block; font-size: 1.05rem; line-height: 1.1; }
 .marca-app small { display: block; font-size: var(--t-xs); color: var(--muted); }
-.sinal-app { width: 22px; height: 28px; background: url("/marca/sinal.svg") no-repeat center / contain; }
-.menu { display: flex; gap: var(--e-1); flex-wrap: wrap; margin-left: auto; }
-.menu a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r-md); text-decoration: none;
+.sinal-app { width: 22px; height: 28px; flex: none; background: url("/marca/sinal.svg") no-repeat center / contain; }
+.menu { display: flex; flex-direction: column; gap: var(--e-1); }
+.menu a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-md); text-decoration: none;
   color: var(--fg); font-size: var(--t-sm); font-weight: 600; }
 .menu a:hover { background: var(--suave); }
 .menu a.ativo { background: var(--acao); color: var(--sobre-acao); }
-@media (max-width: 760px) { .menu a span { display: none; } .menu a { padding: 8px; } .topo { padding: var(--e-2) var(--e-4); } }
+.menu a:focus-visible { outline: none; box-shadow: var(--foco); }
+@media (max-width: 760px) {
+  body:has(> .lateral) { display: block; }
+  .lateral { position: sticky; z-index: 5; height: auto; flex-direction: row; align-items: center; gap: var(--e-3);
+    padding: var(--e-2) var(--e-4); border-right: 0; border-bottom: 1px solid var(--line); }
+  .marca-app small { display: none; }
+  .menu { flex-direction: row; margin-left: auto; }
+  .menu a span { display: none; } .menu a { padding: 8px; }
+  .barra { top: 60px; }
+}
 
 /* ---------- Superfícies ---------- */
 .card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--e-4) var(--e-5); box-shadow: var(--sombra); min-width: 0; }
@@ -148,6 +159,11 @@ button.link:disabled { color: var(--muted); cursor: not-allowed; text-decoration
 .abas button { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: var(--t-sm); font-weight: 600; border: 1px solid var(--line-forte);
   background: var(--card); color: var(--fg); border-radius: var(--r-md); padding: 7px 14px; cursor: pointer; }
 .abas button:hover { border-color: var(--petroleo); }
+.abas a { display: inline-flex; align-items: center; gap: 6px; font-family: var(--fonte-titulo); font-size: var(--t-sm); font-weight: 600; border: 1px solid var(--line-forte);
+  background: var(--card); color: var(--fg); border-radius: var(--r-md); padding: 7px 14px; text-decoration: none; }
+.abas a:hover { border-color: var(--petroleo); }
+.abas a.ativa { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
+.abas-pagina { margin: var(--e-3) 0 var(--e-4); }
 .abas button.ativa { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
 .chips, .alternador { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips { max-height: 180px; overflow-y: auto; }
@@ -169,7 +185,7 @@ td.vazio { color: var(--muted); text-align: center; padding: var(--e-4); }
 
 /* Times e apresentação */
 .barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3) var(--e-4); margin-bottom: var(--e-4); padding: var(--e-3) var(--e-4);
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sombra); position: sticky; top: 64px; z-index: 2; }
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sombra); position: sticky; top: var(--e-2); z-index: 2; }
 .barra > label:not(.opcao) { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); color: var(--fg); }
 .filtros .sub, .linha-form .sub { margin: 0 0 9px; font-size: var(--t-sm); }
 .barra .contagem { color: var(--muted); font-size: var(--t-sm); flex: 1; min-width: 180px; }
@@ -256,11 +272,18 @@ table.editavel td.destaque-tl input { color: var(--perigo); font-weight: 700; }
 .passos li.atual .num { background: var(--acao); color: var(--sobre-acao); border-color: var(--acao); }
 .passos li.feito .num { background: var(--color-positive); border-color: var(--color-positive); color: #fff; }
 .rodape-assistente { display: flex; justify-content: space-between; margin-top: var(--e-4); }
-.lista-slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--e-3); }
-.item-slide { display: flex; gap: 12px; align-items: flex-start; }
-.item-slide input { margin-top: 4px; accent-color: var(--verde-2); }
-.item-slide h3 { margin: 0 0 4px; font-size: var(--t-md, 16px); }
-.item-slide p { margin: 0; color: var(--cinza-verde); font-size: var(--t-sm); }
+/* Seleção de slides: lista de uma coluna, uma linha por slide. */
+.lista-slides { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.item-slide { display: flex; gap: var(--e-3); align-items: flex-start; padding: var(--e-3) var(--e-5); cursor: pointer;
+  border-bottom: 1px solid var(--line); box-shadow: inset 3px 0 0 transparent; transition: background .15s; }
+.item-slide:last-child { border-bottom: 0; }
+.item-slide:hover { background: var(--suave); }
+.item-slide.ativo { box-shadow: inset 3px 0 0 var(--acao); }
+.item-slide:not(.ativo) :is(h3, p) { color: var(--muted); }
+.item-slide:has(input:focus-visible) { box-shadow: inset 3px 0 0 var(--acao), inset 0 0 0 2px color-mix(in srgb, var(--acao) 35%, transparent); }
+.item-slide input { margin-top: 3px; flex: none; accent-color: var(--acao); }
+.item-slide h3 { margin: 0 0 2px; font-size: var(--t-md); font-weight: 600; }
+.item-slide p { margin: 0; color: var(--muted); font-size: var(--t-sm); }
 .etiqueta { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--suave); border: 1px solid var(--line-forte); font-size: 12px; font-weight: 600; vertical-align: middle; }
 .dica { margin: 6px 0 0; color: var(--cinza-verde); font-size: var(--t-sm); }
 .confirmacao dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: var(--e-3) 0; }
@@ -287,3 +310,29 @@ table.analise td.ctx { background: color-mix(in srgb, var(--color-secondary) 16%
 table.analise td.tl { background: color-mix(in srgb, var(--color-error) 18%, var(--card)); font-weight: 700; }
 .legenda-ctx { color: var(--color-secondary-light1); } .legenda-tl { color: var(--color-error); }
 table.analise td:last-child, table.analise td:nth-last-child(2) { white-space: normal; min-width: 240px; text-align: left; }
+
+/* Seleção múltipla com etiquetas (dropdown) */
+.selecao-etiquetas { position: relative; display: grid; gap: var(--e-1); min-width: 280px; flex: 1 1 320px; max-width: 560px; }
+.rotulo-campo { font-size: var(--t-xs); font-weight: 600; color: var(--muted); }
+.se-caixa { display: flex; align-items: center; gap: var(--e-1); min-height: 36px; padding: 3px 8px 3px 6px; cursor: text;
+  background: var(--card); border: 1px solid var(--line-forte); border-radius: var(--r-sm); }
+.se-caixa:hover { border-color: var(--color-neutral); }
+.se-caixa.aberta, .se-caixa:focus-within { border-color: var(--acao); box-shadow: var(--foco); }
+.se-valores { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.se-valores input { flex: 1; min-width: 80px; border: 0 !important; outline: none; background: transparent !important; box-shadow: none !important;
+  padding: 2px 4px !important; min-height: 26px !important; font-size: var(--t-sm); color: var(--fg); }
+.se-etiqueta { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 1px 6px; border: 1px solid var(--line-forte);
+  border-radius: var(--r-sm); background: var(--card); font-size: var(--t-xs); line-height: 18px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.se-etiqueta button { border: 0; background: none; padding: 0 2px; font-size: 14px; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 2px; }
+.se-etiqueta button:hover { color: var(--fg); background: var(--suave); }
+.se-limpar { display: grid; place-items: center; width: 18px; height: 18px; flex: none; border: 0; border-radius: 50%; padding: 0;
+  background: var(--muted); color: var(--card); font-size: 13px; line-height: 1; cursor: pointer; }
+.se-limpar:hover { background: var(--fg); }
+.se-seta { flex: none; color: var(--muted); }
+.se-lista { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; margin: 4px 0 0; padding: var(--e-1) 0; list-style: none;
+  max-height: 280px; overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md);
+  box-shadow: 0 8px 16px 0 rgba(0, 23, 31, .15); }
+.se-lista li { padding: 6px var(--e-4); cursor: pointer; box-shadow: inset 2px 0 0 transparent; }
+.se-lista li.cursor { background: var(--suave); }
+.se-lista li.marcada { background: var(--destaque); box-shadow: inset 2px 0 0 var(--acao); }
+.se-lista .se-vazia { color: var(--muted); font-size: var(--t-sm); cursor: default; }

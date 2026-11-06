@@ -200,6 +200,10 @@ alter table pessoas add constraint pessoas_vinculo_check check (vinculo in ('fun
 -- ponto de partida da contagem de férias. Terceirizados ficam sem data.
 alter table pessoas add column if not exists admissao date;
 
+-- Login do GitHub: atribui PRs ao time/frente pela alocação vigente na data do merge (sem visão individual).
+alter table pessoas add column if not exists github_login text;
+create unique index if not exists pessoas_github_login on pessoas (lower(github_login));
+
 -- Composição do período no histórico (pontos e itens concluídos por tipo, planejamento e roadmap).
 alter table historico_periodos
   add column if not exists tipo_historia_pts numeric, add column if not exists tipo_historia_itens numeric,
@@ -258,3 +262,31 @@ update historico_periodos set cycle_media = cycle_p50, cycle_p50 = null
   where tipo = 'semana' and cycle_p50 is not null and cycle_media is null
     and not exists (select 1 from migracoes where nome = 'media-no-p50');
 insert into migracoes (nome) values ('media-no-p50') on conflict do nothing;
+
+-- PRs do GitHub (DORA/SPACE). O autor fica só para reatribuir quando o cadastro muda: painéis agregam por time/frente.
+create table if not exists itens_pr (
+  repo                text not null,
+  numero              int not null,
+  autor               text not null,
+  titulo              text not null,
+  head                text not null,
+  base                text not null,
+  estado              text not null,
+  rascunho            boolean not null default false,
+  criado_em           timestamptz not null,
+  merged_em           timestamptz,
+  fechado_em          timestamptz,
+  primeira_review_em  timestamptz,
+  adicoes             int,
+  delecoes            int,
+  arquivos            int,
+  chave_jira          text,
+  time                text,                 -- null = não atribuído
+  frente              text not null default '',
+  origem              text not null check (origem in ('jira', 'login', 'nao_atribuido')),
+  deploy              boolean not null,     -- merge em master/main/production
+  hotfix              boolean not null,     -- branch hotfix/, fix/ ou bugfix/
+  coletado_em         timestamptz not null default now(),
+  primary key (repo, numero)
+);
+create index if not exists itens_pr_time_merge on itens_pr (time, merged_em);
