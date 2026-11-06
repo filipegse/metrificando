@@ -1,0 +1,6 @@
+# Configuração do projeto Supabase (CLI). O project_id é ajustado no `supabase link`.
+project_id = "metrificando"
+
+[functions.coleta]
+# Chamada pelo n8n com o header x-coleta-token (segredo COLETA_TOKEN), não com JWT de usuário.
+verify_jwt = false
